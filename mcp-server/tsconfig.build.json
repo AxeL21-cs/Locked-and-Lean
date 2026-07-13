@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": [
+    "src/auth/**/*.ts",
+    "src/config/**/*.ts",
+    "src/http/**/*.ts",
+    "src/repositories/**/*.ts",
+    "src/tools/**/*.ts",
+    "src/app.ts",
+    "src/server.ts"
+  ],
+  "exclude": ["tests/**/*.ts"]
+}

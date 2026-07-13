@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": [
+    "src/auth/**/*.ts",
+    "src/config/**/*.ts",
+    "src/http/**/*.ts",
+    "src/repositories/**/*.ts",
+    "src/tools/**/*.ts",
+    "src/app.ts",
+    "src/server.ts",
+    "tests/**/*.ts"
+  ]
+}

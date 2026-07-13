@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.4
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install locked MCP dependencies
+        run: npm --prefix mcp-server ci --no-audit --no-fund
+
+      - name: Check formatting
+        run: npm run format
+
+      - name: Run Expo lint
+        run: npm run lint
+
+      - name: Run TypeScript checks
+        run: npm run typecheck
+
+      - name: Run Jest tests
+        run: npm test
+
+      - name: Run static contract tests
+        run: npm run test:static
+
+      - name: Run MCP package checks
+        run: npm run check:mcp
+
+      - name: Scan for unauthorized model API usage
+        run: npm run check:no-openai-api
+
+      - name: Resolve public Expo configuration
+        run: npx --no-install expo config --type public
+
+      - name: Export the web bundle without credentials
+        run: npx --no-install expo export --platform web --output-dir dist-ci --clear
+
+  database:
+    name: Database contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CI: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.4
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Start local Supabase
+        run: npx supabase@2.109.1 start
+
+      - name: Reset database from migrations
+        run: npm run db:reset
+
+      - name: Run database contract tests
+        run: npm run test:db
+
+      - name: Lint application schemas
+        run: npm run db:lint
+
+      - name: Run database advisors
+        run: npm run db:advisors
+
+      - name: Stop local Supabase
+        if: always()
+        run: npx supabase@2.109.1 stop --no-backup

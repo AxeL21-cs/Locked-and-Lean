@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Locked and Lean",
+    "slug": "locked-and-lean",
+    "scheme": "lockedandlean",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/brand/locked-and-lean-app-icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lockedandlean.app"
+    },
+    "android": {
+      "package": "com.lockedandlean.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F5F0E6",
+        "foregroundImage": "./assets/brand/locked-and-lean-mark.png",
+        "monochromeImage": "./assets/brand/locked-and-lean-mark-ink.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/brand/locked-and-lean-app-icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/locked-and-lean-mark.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F0E6"
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Locked and Lean to use the camera to scan package barcodes. No photos are stored.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

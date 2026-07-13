@@ -1,0 +1,23 @@
+{
+  "fixture_only": true,
+  "contains_nutrition": false,
+  "market": "PH",
+  "aliases": [
+    {
+      "alias": "adobong manok",
+      "canonical_id": "chicken_adobo"
+    },
+    {
+      "alias": "pakbet",
+      "canonical_id": "pinakbet"
+    },
+    {
+      "alias": "McDo",
+      "canonical_id": "mcdonalds_ph"
+    },
+    {
+      "alias": "Chicken Joy",
+      "canonical_id": "chickenjoy"
+    }
+  ]
+}

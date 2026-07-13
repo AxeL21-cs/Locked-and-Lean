@@ -1,0 +1,60 @@
+{
+  "name": "locked-and-lean",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --runInBand",
+    "test:static": "node --test tests/static/*.test.mjs",
+    "check:mcp": "npm --prefix mcp-server run check",
+    "db:reset": "npx supabase@2.109.1 db reset --local --yes",
+    "test:db": "npx supabase@2.109.1 test db",
+    "db:lint": "npx supabase@2.109.1 db lint --local --schema public,private --level warning --fail-on error",
+    "db:advisors": "npx supabase@2.109.1 db advisors --local",
+    "check:no-openai-api": "node scripts/check-prohibited-openai-api.mjs",
+    "check": "npm run format && npm run lint && npm run typecheck && npm test && npm run test:static && npm run check:mcp && npm run check:no-openai-api"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.110.2",
+    "@tanstack/react-query": "5.101.2",
+    "expo": "~57.0.4",
+    "expo-camera": "~57.0.0",
+    "expo-constants": "~57.0.3",
+    "expo-linking": "~57.0.2",
+    "expo-router": "~57.0.4",
+    "expo-secure-store": "~57.0.0",
+    "expo-splash-screen": "~57.0.2",
+    "expo-status-bar": "~57.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "7.81.0",
+    "react-native": "0.86.0",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-web": "~0.21.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "14.0.1",
+    "@types/jest": "29.5.14",
+    "@types/react": "~19.2.2",
+    "eslint": "9.39.2",
+    "eslint-config-expo": "57.0.0",
+    "jest": "29.7.0",
+    "jest-expo": "57.0.1",
+    "prettier": "3.9.5",
+    "react-test-renderer": "19.2.3",
+    "typescript": "~6.0.3"
+  }
+}

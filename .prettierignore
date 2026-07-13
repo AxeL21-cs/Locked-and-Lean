@@ -1,0 +1,8 @@
+.expo
+coverage
+dist
+dist-ci
+node_modules
+tmp
+supabase/.temp
+package-lock.json
