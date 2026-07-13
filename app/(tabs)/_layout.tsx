@@ -1,10 +1,26 @@
 import { Tabs } from "expo-router";
-import { Text, View } from "react-native";
+import { SymbolView } from "expo-symbols";
+import { StyleSheet, View } from "react-native";
 
 import { TAB_ITEMS } from "../../src/features/navigation/tabs";
-import { colors, type } from "../../src/design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  type,
+} from "../../src/design-system/tokens";
 
-const glyphs = ["◆", "▦", "+", "↗", "●"] as const;
+const glyphs = [
+  { android: "home", ios: "house.fill", web: "home" },
+  { android: "calendar_month", ios: "calendar", web: "calendar_month" },
+  { android: "add", ios: "plus", web: "add" },
+  {
+    android: "monitoring",
+    ios: "chart.line.uptrend.xyaxis",
+    web: "monitoring",
+  },
+  { android: "person", ios: "person.crop.circle", web: "person" },
+] as const;
 
 export default function TabsLayout() {
   return (
@@ -15,14 +31,15 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.inkFaint,
         tabBarLabelStyle: {
           fontFamily: type.label,
-          fontSize: 11,
-          marginBottom: 6,
+          fontSize: 12,
+          marginBottom: 7,
         },
         tabBarStyle: {
-          backgroundColor: colors.paper,
+          backgroundColor: colors.paperRaised,
           borderTopColor: colors.rule,
-          height: 78,
-          paddingTop: 7,
+          height: 82,
+          paddingTop: 8,
+          ...elevation.floating,
         },
       }}
     >
@@ -35,32 +52,17 @@ export default function TabsLayout() {
             tabBarAccessibilityLabel: `${item.label} tab`,
             tabBarIcon: ({ color, focused }) => (
               <View
-                style={
-                  item.name === "add"
-                    ? {
-                        alignItems: "center",
-                        backgroundColor: colors.calamansi,
-                        borderColor: colors.ink,
-                        borderRadius: 18,
-                        borderWidth: 1,
-                        height: 36,
-                        justifyContent: "center",
-                        marginTop: -11,
-                        width: 44,
-                      }
-                    : undefined
-                }
+                style={[
+                  styles.iconBox,
+                  focused && styles.activeIconBox,
+                  item.name === "add" && styles.addIconBox,
+                ]}
               >
-                <Text
-                  style={{
-                    color: item.name === "add" ? colors.ink : color,
-                    fontFamily: type.label,
-                    fontSize: item.name === "add" ? 24 : 17,
-                    fontWeight: focused ? "800" : "600",
-                  }}
-                >
-                  {glyphs[index]}
-                </Text>
+                <SymbolView
+                  name={glyphs[index]!}
+                  size={item.name === "add" ? 27 : 23}
+                  tintColor={item.name === "add" ? colors.ink : color}
+                />
               </View>
             ),
           }}
@@ -69,3 +71,23 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconBox: {
+    alignItems: "center",
+    borderRadius: radius.pill,
+    height: 32,
+    justifyContent: "center",
+    width: 52,
+  },
+  activeIconBox: { backgroundColor: colors.calamansiWash },
+  addIconBox: {
+    backgroundColor: colors.calamansi,
+    borderColor: colors.ink,
+    borderWidth: 1,
+    height: 48,
+    marginTop: -16,
+    width: 56,
+    ...elevation.card,
+  },
+});

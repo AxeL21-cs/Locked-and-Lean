@@ -707,14 +707,14 @@ const styles = StyleSheet.create({
   source: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 15,
     marginTop: spacing.xs,
   },
   macros: {
     color: colors.inkMuted,
     fontFamily: type.label,
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 16,
     marginTop: spacing.sm,
   },
@@ -727,7 +727,7 @@ const styles = StyleSheet.create({
   warningTitle: {
     color: "#9F2D17",
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1.2,
   },
   warningBody: {
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
   scanEyebrow: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 2,
   },
   scanTitle: {
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
   cameraPrivacy: {
     color: colors.rice,
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1.5,
   },
   scanNotice: {
@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
   webNote: {
     color: colors.riceDark,
     fontFamily: type.body,
-    fontSize: 10,
+    fontSize: 12,
     marginTop: spacing.sm,
     textAlign: "center",
   },

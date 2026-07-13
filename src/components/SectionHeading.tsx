@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, spacing, type } from "../design-system/tokens";
+import { colors, spacing, type, typeScale } from "../design-system/tokens";
 
 type Props = { eyebrow: string; title: string; action?: string };
 
@@ -28,19 +28,19 @@ const styles = StyleSheet.create({
   eyebrow: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.7,
+    fontSize: typeScale.caption,
+    letterSpacing: 1,
   },
   title: {
     color: colors.ink,
     fontFamily: type.display,
-    fontSize: 27,
+    fontSize: typeScale.headline,
     marginTop: 3,
   },
   action: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 11,
+    fontSize: typeScale.caption,
     marginBottom: 4,
   },
 });

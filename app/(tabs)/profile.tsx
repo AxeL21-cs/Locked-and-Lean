@@ -7,7 +7,14 @@ import { ActionButton } from "../../src/components/ActionButton";
 import { Screen } from "../../src/components/Screen";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { PRODUCT } from "../../src/design-system/product";
-import { colors, radius, spacing, type } from "../../src/design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../src/design-system/tokens";
 import { useSession } from "../../src/features/auth/SessionProvider";
 import { mobileApi } from "../../src/services/supabase";
 
@@ -18,9 +25,9 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <ScreenHeader
-        eyebrow="FIELD SETTINGS"
+        eyebrow="Account · private"
         title="Profile"
-        annotation="Private account"
+        annotation="Targets, preferences, and session controls."
       />
       <View style={styles.identity}>
         <Text style={styles.monogram}>
@@ -103,38 +110,40 @@ const styles = StyleSheet.create({
     width: 56,
   },
   identityCopy: { flex: 1 },
-  name: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 15 },
+  name: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 16 },
   meta: {
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 12,
+    fontSize: typeScale.label,
+    lineHeight: 18,
     marginTop: 4,
   },
   card: {
-    backgroundColor: colors.paper,
+    backgroundColor: colors.paperRaised,
     borderColor: colors.rule,
     borderRadius: radius.lg,
     borderWidth: 1,
     marginTop: spacing.lg,
     padding: spacing.lg,
+    ...elevation.card,
   },
   cardIndex: {
     color: colors.tomato,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.3,
+    fontSize: typeScale.caption,
+    letterSpacing: 0.7,
   },
   cardTitle: {
     color: colors.ink,
     fontFamily: type.display,
-    fontSize: 23,
+    fontSize: typeScale.title,
     marginTop: spacing.xs,
   },
   cardBody: {
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: typeScale.bodySmall,
+    lineHeight: 21,
     marginTop: spacing.xs,
   },
   error: {
@@ -152,13 +161,13 @@ const styles = StyleSheet.create({
   ruleTitle: {
     color: colors.calamansi,
     fontFamily: type.display,
-    fontSize: 20,
+    fontSize: typeScale.title,
   },
   ruleBody: {
     color: colors.riceDark,
     fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: typeScale.bodySmall,
+    lineHeight: 21,
     marginTop: spacing.xs,
   },
 });

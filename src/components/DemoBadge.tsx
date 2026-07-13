@@ -5,7 +5,7 @@ import { colors, radius, type } from "../design-system/tokens";
 export function DemoBadge({ label }: { label: string }) {
   return (
     <Text accessibilityLabel={`${label}, fixture data`} style={styles.badge}>
-      ◇ {label}
+      FIXTURE · {label}
     </Text>
   );
 }
@@ -17,8 +17,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     color: colors.ink,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.2,
+    fontSize: 11,
+    letterSpacing: 0.8,
     overflow: "hidden",
     paddingHorizontal: 10,
     paddingVertical: 6,

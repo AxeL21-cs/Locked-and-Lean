@@ -34,6 +34,8 @@ Phase 6 - ChatGPT App and MCP (local scaffold complete; OAuth production gate bl
 - Deployed all four application migrations to the hosted Supabase project and verified local/remote migration alignment, application-schema lint, and hosted security/performance advisors.
 - Configured the production Expo environment with the hosted Supabase URL and publishable client key only; no service-role credential or OpenAI model credential is present in the mobile build.
 - Produced an Expo SDK 57 Android production APK (version 0.1.0, build 1) through the internal-distribution profile and validated the downloaded APK archive and Android manifest.
+- Completed an Android-first visual redesign across authentication and all five primary tabs: unified system sans-serif typography, a readable five-level scale, real Material/SF symbols, 48dp-or-larger interactive controls, raised surfaces, clearer calorie/macro hierarchy, and the production brand mark on authentication.
+- Prepared Android version 0.2.0 (build 2) as the installable redesign release.
 
 ## Blocked work
 
@@ -65,6 +67,8 @@ Phase 6 - ChatGPT App and MCP (local scaffold complete; OAuth production gate bl
 - MCP live-process gate: `/healthz` returned a coarse locked/degraded response, unconfigured protected-resource metadata returned 503, and protocol `2025-11-25` initialization returned 200.
 - Hosted Supabase migration alignment: passed for all four application migrations; linked `public`/`private` lint and hosted security/performance advisors returned no issues.
 - Android EAS production build: passed for version 0.1.0 (build 1), internal-distribution APK; downloaded artifact is 122,637,469 bytes, contains `AndroidManifest.xml`, and has SHA-256 `714DEE92EE90A5BFACF9416259BF4D48B64464D9BEC753EF11BC7E0C9D85C4D3`.
+- Mobile redesign gate: `npm run check` passed (158 app tests, 43 static/security checks, and 30 MCP tests), Expo production web export passed for 27 routes, and the 390x844 visual preview rendered with no application errors.
+- Requested mobile-design audit: production font sizes below 11 were removed and explicit interactive control sizes are at least 48dp. The third-party heuristic still reports nine non-interactive numeric properties (such as icon/image sizes and line widths) as touch-target findings; each reported source was manually classified rather than weakening the visual design to satisfy the regex.
 
 ## Security status
 
@@ -79,6 +83,7 @@ Phase 6 - ChatGPT App and MCP (local scaffold complete; OAuth production gate bl
 - Expo web development emits framework-level `pointerEvents` deprecation and multiple-renderer context warnings, but the browser gate found no application error or user-visible failure.
 - Barcode lookup currently uses the server catalog snapshot; live nutrition providers and licensed Philippine datasets remain unconnected pending terms/licensing review.
 - Physical iOS/Android camera capture and OS-settings round trips, full hosted pgTAP under a privileged test role, and true concurrent idempotency remain unverified.
+- Physical Android verification at 200% system font scale, TalkBack traversal, and low-end-device frame profiling remain required for the redesigned interface.
 - MCP preview/revision tools are intentionally unavailable because no OAuth-compatible general preview RPC exists; today summary, recent foods, update, and copy MCP coverage remains incomplete.
 - Hosted authorization-code/PKCE, real ChatGPT linking, MCP Inspector, revocation behavior, TLS/proxy/rate limits, chunked-body bounding, and production telemetry retention remain unverified.
 

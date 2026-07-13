@@ -1,6 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, spacing, type } from "../design-system/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../design-system/tokens";
 
 type Props = {
   compact?: boolean;
@@ -39,12 +45,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: spacing.sm,
   },
-  label: { color: colors.riceDark, fontFamily: type.bodyStrong, fontSize: 11 },
-  value: { color: colors.riceDark, fontFamily: type.label, fontSize: 9 },
+  label: {
+    color: colors.riceDark,
+    fontFamily: type.bodyStrong,
+    fontSize: typeScale.caption,
+  },
+  value: {
+    color: colors.riceDark,
+    fontFamily: type.numeric,
+    fontSize: typeScale.caption,
+  },
   track: {
     backgroundColor: colors.inkRule,
     borderRadius: radius.pill,
-    height: 5,
+    height: 7,
     overflow: "hidden",
   },
   fill: {

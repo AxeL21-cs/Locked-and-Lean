@@ -4,7 +4,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ActionButton } from "../../components/ActionButton";
 import { AsyncStatePanel } from "../../components/AsyncStatePanel";
 import { ChoiceChips } from "../../components/ChoiceChips";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../design-system/tokens";
 import type { MealType } from "../../services/supabase";
 import type {
   CalendarDayView,
@@ -13,7 +20,15 @@ import type {
   HistoryViewMode,
 } from "./types";
 
-const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
+const WEEKDAYS = [
+  { key: "mon", label: "M" },
+  { key: "tue", label: "T" },
+  { key: "wed", label: "W" },
+  { key: "thu", label: "T" },
+  { key: "fri", label: "F" },
+  { key: "sat", label: "S" },
+  { key: "sun", label: "S" },
+] as const;
 const MODES = [
   { label: "Month", value: "month" },
   { label: "Week", value: "week" },
@@ -134,9 +149,9 @@ function HistoryGrid({
     <View style={styles.calendarCard}>
       {mode === "month" ? (
         <View accessibilityElementsHidden style={styles.weekdayRow}>
-          {WEEKDAYS.map((day, index) => (
-            <Text key={`${day}-${index}`} style={styles.weekday}>
-              {day}
+          {WEEKDAYS.map((day) => (
+            <Text key={day.key} style={styles.weekday}>
+              {day.label}
             </Text>
           ))}
         </View>
@@ -450,6 +465,8 @@ const styles = StyleSheet.create({
   periodTitleButton: {
     alignItems: "center",
     flex: 1,
+    minHeight: 48,
+    justifyContent: "center",
     paddingHorizontal: spacing.sm,
   },
   periodTitle: {
@@ -461,8 +478,8 @@ const styles = StyleSheet.create({
   periodToday: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 8,
-    letterSpacing: 1.4,
+    fontSize: 11,
+    letterSpacing: 0.8,
     marginTop: 3,
   },
   calendarCard: {
@@ -473,14 +490,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     overflow: "hidden",
     padding: spacing.sm,
+    ...elevation.card,
   },
   weekdayRow: { flexDirection: "row", paddingVertical: spacing.sm },
   weekday: {
     color: colors.inkFaint,
     flex: 1,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: 11,
+    letterSpacing: 0.5,
     textAlign: "center",
   },
   monthGrid: { flexDirection: "row", flexWrap: "wrap" },
@@ -492,6 +510,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 2,
     justifyContent: "center",
+    minHeight: 48,
     width: "14.2857%",
   },
   weekCell: {
@@ -505,31 +524,39 @@ const styles = StyleSheet.create({
   },
   outsideMonth: { opacity: 0.35 },
   selectedDay: { backgroundColor: colors.skyWash, borderColor: colors.ink },
-  dayNumber: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 13 },
+  dayNumber: {
+    color: colors.ink,
+    fontFamily: type.bodyStrong,
+    fontSize: typeScale.label,
+  },
   todayNumber: { textDecorationLine: "underline" },
   daySymbol: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 11,
+    fontSize: 12,
   },
   weekLabel: {
     color: colors.inkFaint,
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: typeScale.caption,
     width: 36,
   },
   weekStatus: {
     color: colors.inkMuted,
     flex: 1,
     fontFamily: type.bodyStrong,
-    fontSize: 11,
+    fontSize: typeScale.label,
   },
-  weekKcal: { color: colors.ink, fontFamily: type.label, fontSize: 11 },
+  weekKcal: {
+    color: colors.ink,
+    fontFamily: type.numeric,
+    fontSize: typeScale.label,
+  },
   legend: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 10,
-    lineHeight: 15,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     padding: spacing.sm,
   },
   ledger: { marginTop: spacing.xl },
@@ -541,8 +568,8 @@ const styles = StyleSheet.create({
   ledgerEyebrow: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.4,
+    fontSize: typeScale.caption,
+    letterSpacing: 0.8,
   },
   ledgerTitle: {
     color: colors.ink,
@@ -553,11 +580,15 @@ const styles = StyleSheet.create({
   ledgerStatus: {
     color: colors.inkMuted,
     fontFamily: type.bodyStrong,
-    fontSize: 11,
+    fontSize: typeScale.label,
     marginTop: 4,
   },
-  ledgerCalories: { color: colors.ink, fontFamily: type.display, fontSize: 29 },
-  ledgerUnit: { color: colors.inkFaint, fontFamily: type.label, fontSize: 9 },
+  ledgerCalories: { color: colors.ink, fontFamily: type.numeric, fontSize: 30 },
+  ledgerUnit: {
+    color: colors.inkFaint,
+    fontFamily: type.label,
+    fontSize: typeScale.caption,
+  },
   summaryStrip: {
     backgroundColor: colors.ink,
     borderRadius: radius.md,
@@ -567,7 +598,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     padding: spacing.md,
   },
-  summaryText: { color: colors.rice, fontFamily: type.label, fontSize: 10 },
+  summaryText: {
+    color: colors.rice,
+    fontFamily: type.label,
+    fontSize: typeScale.caption,
+  },
   truncated: {
     backgroundColor: colors.tomatoWash,
     color: colors.ink,
@@ -587,24 +622,33 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   entry: {
-    borderBottomColor: colors.rule,
-    borderBottomWidth: 1,
-    paddingVertical: spacing.lg,
+    backgroundColor: colors.paperRaised,
+    borderColor: colors.rule,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 16,
+    ...elevation.card,
   },
   entryTop: { flexDirection: "row", gap: spacing.md },
   entryName: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 15 },
   entryMeta: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 11,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     marginTop: 3,
   },
   entryCalories: { color: colors.ink, fontFamily: type.label, fontSize: 15 },
-  entryUnit: { color: colors.inkFaint, fontFamily: type.body, fontSize: 9 },
+  entryUnit: {
+    color: colors.inkFaint,
+    fontFamily: type.body,
+    fontSize: typeScale.caption,
+  },
   entryMacros: {
     color: colors.inkMuted,
     fontFamily: type.label,
-    fontSize: 10,
+    fontSize: typeScale.caption,
     marginTop: spacing.sm,
   },
   warning: {
@@ -620,12 +664,20 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 44,
+    minHeight: 48,
     minWidth: 68,
     paddingHorizontal: spacing.md,
   },
-  entryActionText: { color: colors.ink, fontFamily: type.label, fontSize: 10 },
-  deleteActionText: { color: "#9F2D17", fontFamily: type.label, fontSize: 10 },
+  entryActionText: {
+    color: colors.ink,
+    fontFamily: type.label,
+    fontSize: typeScale.label,
+  },
+  deleteActionText: {
+    color: colors.tomato,
+    fontFamily: type.label,
+    fontSize: typeScale.label,
+  },
   deletePanel: {
     backgroundColor: colors.tomatoWash,
     borderColor: colors.tomato,
@@ -650,7 +702,8 @@ const styles = StyleSheet.create({
   serverStamp: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 9,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     marginTop: spacing.xl,
   },
 });

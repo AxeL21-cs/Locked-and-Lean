@@ -6,7 +6,13 @@ import { StyleSheet, Text } from "react-native";
 import { AddActionList } from "../../src/features/add/AddActionList";
 import { Screen } from "../../src/components/Screen";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
-import { colors, radius, spacing, type } from "../../src/design-system/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../src/design-system/tokens";
 
 export default function AddScreen() {
   const router = useRouter();
@@ -17,9 +23,9 @@ export default function AddScreen() {
   return (
     <Screen>
       <ScreenHeader
-        eyebrow="INTERPRET → VERIFY → LOG"
-        title="Add to today"
-        annotation="Nothing saves on selection"
+        eyebrow="Interpret · verify · log"
+        title="Add food"
+        annotation="Review a complete preview before anything is saved."
       />
       <Text style={styles.notice} accessibilityLiveRegion="polite">
         {notice}
@@ -46,23 +52,23 @@ export default function AddScreen() {
 
 const styles = StyleSheet.create({
   notice: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
+    backgroundColor: colors.calamansiWash,
+    borderColor: colors.ruleStrong,
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 14,
+    fontSize: typeScale.bodySmall,
     lineHeight: 21,
-    marginTop: spacing.xl,
-    padding: spacing.md,
+    marginTop: spacing.lg,
+    padding: 16,
   },
   safety: {
     color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: 10,
-    letterSpacing: 1,
-    lineHeight: 16,
+    fontFamily: type.body,
+    fontSize: typeScale.caption,
+    letterSpacing: 0,
+    lineHeight: 18,
     marginBottom: spacing.xxl,
     marginTop: spacing.lg,
   },

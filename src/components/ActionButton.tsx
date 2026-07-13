@@ -1,6 +1,12 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 
-import { colors, radius, spacing, type } from "../design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+} from "../design-system/tokens";
 
 export function ActionButton({
   label,
@@ -53,24 +59,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.ink,
     borderColor: colors.ink,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: 1,
     flexDirection: "row",
     gap: spacing.sm,
     justifyContent: "center",
     marginTop: spacing.md,
-    minHeight: 54,
+    minHeight: 56,
     paddingHorizontal: spacing.lg,
+    ...elevation.card,
   },
-  secondary: { backgroundColor: "transparent" },
-  danger: { backgroundColor: "#9F2D17", borderColor: "#9F2D17" },
+  secondary: {
+    backgroundColor: colors.paperRaised,
+    borderColor: colors.ruleStrong,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  danger: { backgroundColor: colors.tomato, borderColor: colors.tomato },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.75, transform: [{ scale: 0.995 }] },
   label: {
     color: colors.rice,
     fontFamily: type.label,
-    fontSize: 13,
-    letterSpacing: 0.4,
+    fontSize: 15,
+    letterSpacing: 0.2,
+    lineHeight: 20,
   },
   secondaryLabel: { color: colors.ink },
 });

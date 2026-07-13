@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   stampTop: {
     color: colors.tomato,
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1.4,
   },
   stampRevision: {
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   totalLabel: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1.6,
   },
   calories: {

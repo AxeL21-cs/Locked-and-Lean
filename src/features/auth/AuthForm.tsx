@@ -3,14 +3,21 @@ import { useMutation } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { ActionButton } from "../../components/ActionButton";
 import { Field } from "../../components/Field";
 import { Screen } from "../../components/Screen";
 import { PRODUCT } from "../../design-system/product";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../design-system/tokens";
 import { mobileApi } from "../../services/supabase";
 import { oauthConsentRoute } from "../oauth/authorization";
 
@@ -97,7 +104,12 @@ export function AuthForm({
   return (
     <Screen>
       <View style={styles.mark}>
-        <Text style={styles.markText}>LL</Text>
+        <Image
+          accessibilityLabel={`${PRODUCT.name} mark`}
+          resizeMode="contain"
+          source={require("../../../assets/brand/locked-and-lean-mark-ink.png")}
+          style={styles.markImage}
+        />
       </View>
       <Text style={styles.eyebrow}>{copy[0]}</Text>
       <Text accessibilityRole="header" style={styles.title}>
@@ -205,41 +217,43 @@ const styles = StyleSheet.create({
     borderColor: colors.ink,
     borderRadius: radius.pill,
     borderWidth: 1,
-    height: 52,
+    height: 64,
     justifyContent: "center",
     marginTop: spacing.xl,
-    width: 52,
+    width: 64,
+    ...elevation.card,
   },
-  markText: { color: colors.ink, fontFamily: type.display, fontSize: 18 },
+  markImage: { height: 38, width: 38 },
   eyebrow: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 10,
-    letterSpacing: 1.8,
+    fontSize: typeScale.caption,
+    letterSpacing: 1,
     marginTop: spacing.xl,
   },
   title: {
     color: colors.ink,
     fontFamily: type.display,
-    fontSize: 42,
-    letterSpacing: -1.5,
-    lineHeight: 46,
+    fontSize: typeScale.display,
+    letterSpacing: -1.1,
+    lineHeight: 40,
     marginTop: spacing.xs,
   },
   intro: {
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 15,
-    lineHeight: 23,
+    fontSize: typeScale.body,
+    lineHeight: 24,
     marginTop: spacing.sm,
   },
   form: {
-    backgroundColor: colors.paper,
+    backgroundColor: colors.paperRaised,
     borderColor: colors.rule,
     borderRadius: radius.lg,
     borderWidth: 1,
     marginTop: spacing.xl,
     padding: spacing.lg,
+    ...elevation.card,
   },
   oauthReturn: {
     backgroundColor: colors.skyWash,
@@ -252,13 +266,13 @@ const styles = StyleSheet.create({
   oauthReturnTitle: {
     color: colors.ink,
     fontFamily: type.bodyStrong,
-    fontSize: 13,
+    fontSize: typeScale.bodySmall,
   },
   oauthReturnCopy: {
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: typeScale.bodySmall,
+    lineHeight: 21,
     marginTop: 3,
   },
   error: {
@@ -278,8 +292,8 @@ const styles = StyleSheet.create({
   privacy: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     marginBottom: spacing.xl,
     marginTop: spacing.lg,
   },

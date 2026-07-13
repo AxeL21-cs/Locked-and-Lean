@@ -1,6 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, spacing, type } from "../design-system/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../design-system/tokens";
 
 export type Choice<T extends string> = { label: string; value: T };
 
@@ -47,13 +53,18 @@ export function ChoiceChips<T extends string>({
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm, marginTop: spacing.md },
-  label: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 13 },
+  label: {
+    color: colors.ink,
+    fontFamily: type.bodyStrong,
+    fontSize: typeScale.bodySmall,
+  },
   row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   chip: {
-    borderColor: colors.rule,
+    backgroundColor: colors.paperRaised,
+    borderColor: colors.ruleStrong,
     borderRadius: radius.pill,
     borderWidth: 1,
-    minHeight: 44,
+    minHeight: 48,
     justifyContent: "center",
     paddingHorizontal: spacing.md,
   },
@@ -61,7 +72,7 @@ const styles = StyleSheet.create({
   chipText: {
     color: colors.inkMuted,
     fontFamily: type.bodyStrong,
-    fontSize: 12,
+    fontSize: typeScale.label,
   },
   selectedText: { color: colors.calamansi },
   error: { color: "#9F2D17", fontFamily: type.bodyStrong, fontSize: 12 },

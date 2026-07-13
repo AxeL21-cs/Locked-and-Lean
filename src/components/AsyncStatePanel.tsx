@@ -1,3 +1,4 @@
+import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
   Pressable,
@@ -6,7 +7,14 @@ import {
   View,
 } from "react-native";
 
-import { colors, radius, spacing, type } from "../design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../design-system/tokens";
 
 type StateKind = "empty" | "error" | "loading" | "offline";
 type Props = {
@@ -17,12 +25,20 @@ type Props = {
   title: string;
 };
 
-const symbol: Record<StateKind, string> = {
-  empty: "○",
-  error: "!",
-  loading: "…",
-  offline: "↯",
-};
+const symbol = {
+  empty: { android: "inbox", ios: "tray", web: "inbox" },
+  error: {
+    android: "error",
+    ios: "exclamationmark.triangle.fill",
+    web: "error",
+  },
+  loading: {
+    android: "progress_activity",
+    ios: "arrow.triangle.2.circlepath",
+    web: "progress_activity",
+  },
+  offline: { android: "cloud_off", ios: "wifi.slash", web: "cloud_off" },
+} as const;
 const status: Record<StateKind, string> = {
   empty: "EMPTY",
   error: "ERROR",
@@ -44,7 +60,13 @@ export function AsyncStatePanel({
       style={[styles.panel, kind === "error" && styles.errorPanel]}
     >
       <View style={styles.topline}>
-        <Text style={styles.symbol}>{symbol[kind]}</Text>
+        <View style={styles.symbolBox}>
+          <SymbolView
+            name={symbol[kind]}
+            size={22}
+            tintColor={kind === "error" ? colors.tomato : colors.ink}
+          />
+        </View>
         <Text style={styles.status}>{status[kind]}</Text>
         {kind === "loading" ? (
           <ActivityIndicator
@@ -66,7 +88,7 @@ export function AsyncStatePanel({
             pressed && styles.actionPressed,
           ]}
         >
-          <Text style={styles.actionText}>↻ {actionLabel}</Text>
+          <Text style={styles.actionText}>{actionLabel}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -81,35 +103,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: spacing.xl,
     padding: spacing.lg,
+    ...elevation.card,
   },
   errorPanel: {
     backgroundColor: colors.tomatoWash,
     borderColor: colors.tomato,
   },
   topline: { alignItems: "center", flexDirection: "row", gap: spacing.sm },
-  symbol: {
-    color: colors.tomato,
-    fontFamily: type.label,
-    fontSize: 18,
-    minWidth: 16,
+  symbolBox: {
+    alignItems: "center",
+    backgroundColor: colors.calamansiWash,
+    borderRadius: radius.pill,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
   },
   status: {
     color: colors.inkFaint,
     flex: 1,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.7,
+    fontSize: typeScale.caption,
+    letterSpacing: 1,
   },
   title: {
     color: colors.ink,
     fontFamily: type.display,
-    fontSize: 24,
+    fontSize: typeScale.title,
+    lineHeight: 26,
     marginTop: spacing.md,
   },
   message: {
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 14,
+    fontSize: typeScale.bodySmall,
     lineHeight: 21,
     marginTop: spacing.xs,
   },
@@ -125,5 +151,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   actionPressed: { opacity: 0.75 },
-  actionText: { color: colors.rice, fontFamily: type.label, fontSize: 13 },
+  actionText: { color: colors.rice, fontFamily: type.label, fontSize: 14 },
 });

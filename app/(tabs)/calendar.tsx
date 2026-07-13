@@ -203,9 +203,9 @@ export default function CalendarScreen() {
   return (
     <Screen>
       <ScreenHeader
-        annotation="Confirmed server snapshots"
-        eyebrow="HISTORY · ASIA/MANILA"
-        title="Calendar ledger"
+        annotation="Every total comes from confirmed entries."
+        eyebrow="History · Manila time"
+        title="Your food history"
       />
       <HistoryCalendar
         days={calendarQuery.data!}

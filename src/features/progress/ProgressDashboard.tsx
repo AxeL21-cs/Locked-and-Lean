@@ -1,7 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { ChoiceChips } from "../../components/ChoiceChips";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../design-system/tokens";
 import type { CalendarDayView } from "../calendar/types";
 import type {
   ProgressDashboardData,
@@ -304,6 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
     borderRadius: radius.xl,
     padding: spacing.xl,
+    ...elevation.floating,
   },
   summarySecondary: {
     backgroundColor: colors.calamansi,
@@ -311,16 +319,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     padding: spacing.xl,
+    ...elevation.card,
   },
   summaryEyebrow: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.7,
+    fontSize: typeScale.caption,
+    letterSpacing: 1,
   },
   summaryNumber: {
     color: colors.rice,
-    fontFamily: type.display,
+    fontFamily: type.numeric,
     fontSize: 54,
     lineHeight: 60,
     marginTop: spacing.xs,
@@ -328,17 +337,18 @@ const styles = StyleSheet.create({
   summaryCaption: {
     color: colors.riceDark,
     fontFamily: type.body,
-    fontSize: 11,
+    fontSize: typeScale.label,
+    lineHeight: 18,
   },
   summaryDarkEyebrow: {
     color: colors.inkMuted,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.7,
+    fontSize: typeScale.caption,
+    letterSpacing: 1,
   },
   summaryDarkNumber: {
     color: colors.ink,
-    fontFamily: type.display,
+    fontFamily: type.numeric,
     fontSize: 48,
     lineHeight: 54,
     marginTop: spacing.xs,
@@ -346,16 +356,17 @@ const styles = StyleSheet.create({
   summaryDarkCaption: {
     color: colors.inkMuted,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: typeScale.caption,
+    letterSpacing: 0.8,
   },
   macroSummary: {
-    backgroundColor: colors.paper,
+    backgroundColor: colors.paperRaised,
     borderColor: colors.rule,
     borderRadius: radius.lg,
     borderWidth: 1,
     marginTop: spacing.md,
     padding: spacing.lg,
+    ...elevation.card,
   },
   macroSummaryTitle: {
     color: colors.ink,
@@ -365,8 +376,8 @@ const styles = StyleSheet.create({
   macroSummaryCopy: {
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: typeScale.bodySmall,
+    lineHeight: 21,
     marginTop: spacing.xs,
   },
   macroSummaryValues: {
@@ -378,7 +389,7 @@ const styles = StyleSheet.create({
   macroSummaryValue: {
     color: colors.ink,
     fontFamily: type.label,
-    fontSize: 11,
+    fontSize: typeScale.label,
   },
   weightSummary: {
     backgroundColor: colors.skyWash,
@@ -391,26 +402,27 @@ const styles = StyleSheet.create({
   weightSummaryEyebrow: {
     color: colors.inkMuted,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.4,
+    fontSize: typeScale.caption,
+    letterSpacing: 0.8,
   },
   weightSummaryValue: {
     color: colors.ink,
-    fontFamily: type.display,
+    fontFamily: type.numeric,
     fontSize: 34,
     marginTop: spacing.sm,
   },
   weightSummaryDirection: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 10,
+    fontSize: typeScale.caption,
     letterSpacing: 0.8,
     marginTop: 2,
   },
   weightSummaryDates: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 10,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     marginTop: spacing.sm,
   },
   weightSummaryEmpty: {
@@ -420,19 +432,20 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   chartCard: {
-    backgroundColor: colors.paper,
+    backgroundColor: colors.paperRaised,
     borderColor: colors.rule,
     borderRadius: radius.lg,
     borderWidth: 1,
     marginTop: spacing.xl,
     padding: spacing.lg,
+    ...elevation.card,
   },
   chartHead: { alignItems: "flex-end", flexDirection: "row", gap: spacing.md },
   chartEyebrow: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.5,
+    fontSize: typeScale.caption,
+    letterSpacing: 0.8,
   },
   chartTitle: {
     color: colors.ink,
@@ -440,7 +453,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginTop: 2,
   },
-  chartNote: { color: colors.inkFaint, fontFamily: type.body, fontSize: 9 },
+  chartNote: {
+    color: colors.inkFaint,
+    fontFamily: type.body,
+    fontSize: typeScale.caption,
+  },
   barChart: {
     alignItems: "flex-end",
     flexDirection: "row",
@@ -462,15 +479,15 @@ const styles = StyleSheet.create({
   barSymbol: {
     color: colors.ink,
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: 11,
     marginTop: 3,
   },
-  barDate: { color: colors.inkFaint, fontFamily: type.body, fontSize: 7 },
+  barDate: { color: colors.inkFaint, fontFamily: type.body, fontSize: 11 },
   legend: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 9,
-    lineHeight: 14,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     marginTop: spacing.md,
   },
   section: { marginTop: spacing.xl },
@@ -483,7 +500,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   sectionTitle: { color: colors.ink, fontFamily: type.display, fontSize: 25 },
-  sectionMeta: { color: colors.inkFaint, fontFamily: type.body, fontSize: 9 },
+  sectionMeta: {
+    color: colors.inkFaint,
+    fontFamily: type.body,
+    fontSize: typeScale.caption,
+  },
   macroRow: {
     borderBottomColor: colors.rule,
     borderBottomWidth: 1,
@@ -496,15 +517,19 @@ const styles = StyleSheet.create({
   macroDate: {
     color: colors.inkFaint,
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: typeScale.caption,
     width: 42,
   },
-  macroValue: { color: colors.ink, fontFamily: type.label, fontSize: 9 },
+  macroValue: {
+    color: colors.ink,
+    fontFamily: type.label,
+    fontSize: typeScale.caption,
+  },
   macroStatus: {
     color: colors.calamansiDeep,
     flexBasis: "100%",
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 0.7,
     marginLeft: 50,
   },
@@ -543,27 +568,27 @@ const styles = StyleSheet.create({
   weightDirection: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 0.7,
   },
   weightDate: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 10,
+    fontSize: typeScale.caption,
     marginTop: 2,
   },
   weightGap: {
     color: colors.inkFaint,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 0.6,
     marginTop: 2,
   },
   serverStamp: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 9,
-    lineHeight: 15,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     marginBottom: spacing.xl,
     marginTop: spacing.xl,
   },

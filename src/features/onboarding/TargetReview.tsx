@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   kcalLabel: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 2,
   },
   macros: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   macroLabel: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 10,
+    fontSize: 12,
     marginTop: spacing.xs,
   },
   detail: {

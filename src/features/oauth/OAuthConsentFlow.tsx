@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   brandMeta: {
     color: colors.inkFaint,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 1.3,
   },
   passport: {
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   eyebrow: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 1.5,
   },
   title: {
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   identityLabel: {
     color: colors.riceDark,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 1.4,
   },
   identityValue: {
@@ -420,14 +420,14 @@ const styles = StyleSheet.create({
   verified: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 0.7,
     marginTop: spacing.sm,
   },
   clientId: {
     color: colors.riceDark,
     fontFamily: type.body,
-    fontSize: 9,
+    fontSize: 11,
     marginTop: spacing.lg,
   },
   sectionTitle: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   scopeCode: {
     color: colors.inkFaint,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 0.6,
     marginTop: spacing.sm,
   },
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   boundaryLabel: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 8,
+    fontSize: 11,
     letterSpacing: 1.4,
   },
   boundaryTitle: {
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   footnote: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 9,
+    fontSize: 11,
     lineHeight: 15,
     marginBottom: spacing.xl,
     marginTop: spacing.lg,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   blockedStampText: {
     color: colors.tomato,
     fontFamily: type.label,
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1.2,
   },
   blockedPageTitle: {

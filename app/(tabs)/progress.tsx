@@ -9,7 +9,14 @@ import { AsyncStatePanel } from "../../src/components/AsyncStatePanel";
 import { Field } from "../../src/components/Field";
 import { Screen } from "../../src/components/Screen";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
-import { colors, radius, spacing, type } from "../../src/design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../src/design-system/tokens";
 import {
   addLocalDateDays,
   buildWeek,
@@ -115,9 +122,9 @@ export default function ProgressScreen() {
   return (
     <Screen>
       <ScreenHeader
-        annotation="Confirmed snapshots · recorded weights"
-        eyebrow="PROGRESS · ASIA/MANILA"
-        title="Trends, without guesswork"
+        annotation="Confirmed food and recorded weight only."
+        eyebrow="Progress · Manila time"
+        title="See the trend"
       />
       <View style={styles.form}>
         <Text style={styles.formTitle}>Log a measurement</Text>
@@ -214,14 +221,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
     borderRadius: radius.xl,
     marginTop: spacing.xl,
-    padding: spacing.xl,
+    padding: 22,
+    ...elevation.floating,
   },
-  formTitle: { color: colors.rice, fontFamily: type.display, fontSize: 27 },
+  formTitle: {
+    color: colors.rice,
+    fontFamily: type.display,
+    fontSize: typeScale.headline,
+  },
   formCopy: {
     color: colors.riceDark,
     fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: typeScale.bodySmall,
+    lineHeight: 21,
     marginTop: spacing.xs,
   },
   error: {

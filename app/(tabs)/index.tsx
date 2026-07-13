@@ -9,7 +9,14 @@ import { AsyncStatePanel } from "../../src/components/AsyncStatePanel";
 import { MacroRail } from "../../src/components/MacroRail";
 import { Screen } from "../../src/components/Screen";
 import { PRODUCT } from "../../src/design-system/product";
-import { colors, radius, spacing, type } from "../../src/design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../src/design-system/tokens";
 import {
   mobileApi,
   type FoodEntry,
@@ -89,6 +96,7 @@ export default function TodayScreen() {
             : `${remaining} calories remaining`
         }
       >
+        <View style={styles.accentBar} />
         <Text style={styles.cardEyebrow}>
           {target == null ? "NO ACTIVE TARGET" : "TODAY’S BALANCE"}
         </Text>
@@ -277,15 +285,17 @@ const styles = StyleSheet.create({
   brand: {
     color: colors.ink,
     fontFamily: type.display,
-    fontSize: 30,
-    letterSpacing: -1.1,
+    fontSize: 25,
+    letterSpacing: -0.7,
+    lineHeight: 30,
   },
   kicker: {
     color: colors.inkFaint,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.3,
-    marginTop: 3,
+    fontSize: typeScale.caption,
+    letterSpacing: 0.7,
+    lineHeight: 17,
+    marginTop: 2,
   },
   live: {
     alignItems: "center",
@@ -294,42 +304,50 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    minHeight: 36,
+    paddingHorizontal: 10,
   },
-  liveDot: { color: colors.calamansiDeep, fontSize: 8 },
+  liveDot: { color: colors.calamansiDeep, fontSize: 11 },
   liveText: {
     color: colors.inkMuted,
     fontFamily: type.label,
-    fontSize: 8,
-    letterSpacing: 1,
+    fontSize: 11,
+    letterSpacing: 0.6,
   },
   energyCard: {
     backgroundColor: colors.ink,
     borderRadius: radius.xl,
     marginTop: spacing.xl,
     overflow: "hidden",
-    padding: spacing.xl,
+    padding: 24,
+    ...elevation.floating,
+  },
+  accentBar: {
+    backgroundColor: colors.calamansi,
+    borderRadius: radius.pill,
+    height: 5,
+    marginBottom: spacing.lg,
+    width: 48,
   },
   cardEyebrow: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 1.8,
+    fontSize: typeScale.caption,
+    letterSpacing: 1,
   },
   remaining: {
     color: colors.rice,
-    fontFamily: type.display,
-    fontSize: 62,
-    letterSpacing: -3,
-    lineHeight: 68,
+    fontFamily: type.numeric,
+    fontSize: typeScale.hero,
+    letterSpacing: -2.5,
+    lineHeight: 64,
     marginTop: spacing.sm,
   },
   remainingLabel: {
     color: colors.calamansi,
     fontFamily: type.label,
-    fontSize: 10,
-    letterSpacing: 2,
+    fontSize: typeScale.caption,
+    letterSpacing: 1.1,
     marginBottom: spacing.xl,
   },
   macroGrid: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg },
@@ -342,18 +360,26 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingBottom: spacing.sm,
   },
-  sectionTitle: { color: colors.ink, fontFamily: type.display, fontSize: 27 },
-  sectionCount: { color: colors.inkFaint, fontFamily: type.body, fontSize: 11 },
+  sectionTitle: { color: colors.ink, fontFamily: type.display, fontSize: 22 },
+  sectionCount: {
+    color: colors.inkFaint,
+    fontFamily: type.body,
+    fontSize: typeScale.caption,
+  },
   emptyMeal: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 12,
+    fontSize: typeScale.bodySmall,
     paddingVertical: spacing.md,
   },
   entry: {
-    borderBottomColor: colors.rule,
-    borderBottomWidth: 1,
-    paddingVertical: spacing.lg,
+    backgroundColor: colors.paperRaised,
+    borderColor: colors.rule,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 16,
+    ...elevation.card,
   },
   entryTop: { flexDirection: "row", gap: spacing.md },
   entryCopy: { flex: 1 },
@@ -361,18 +387,23 @@ const styles = StyleSheet.create({
   entryMeta: {
     color: colors.inkMuted,
     fontFamily: type.body,
-    fontSize: 12,
+    fontSize: typeScale.label,
+    lineHeight: 18,
     marginTop: 3,
   },
   entryStatus: {
     color: colors.calamansiDeep,
     fontFamily: type.label,
-    fontSize: 9,
-    letterSpacing: 0.7,
+    fontSize: 11,
+    letterSpacing: 0.5,
     marginTop: spacing.sm,
   },
-  entryKcal: { color: colors.ink, fontFamily: type.label, fontSize: 16 },
-  entryUnit: { color: colors.inkFaint, fontFamily: type.body, fontSize: 10 },
+  entryKcal: { color: colors.ink, fontFamily: type.numeric, fontSize: 18 },
+  entryUnit: {
+    color: colors.inkFaint,
+    fontFamily: type.body,
+    fontSize: typeScale.caption,
+  },
   actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
   smallAction: {
     alignItems: "center",
@@ -380,12 +411,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 44,
+    minHeight: 48,
     minWidth: 68,
     paddingHorizontal: spacing.md,
   },
-  smallText: { color: colors.ink, fontFamily: type.label, fontSize: 11 },
-  deleteText: { color: "#9F2D17", fontFamily: type.label, fontSize: 11 },
+  smallText: { color: colors.ink, fontFamily: type.label, fontSize: 13 },
+  deleteText: { color: colors.tomato, fontFamily: type.label, fontSize: 13 },
   deletePanel: {
     backgroundColor: colors.tomatoWash,
     borderColor: colors.tomato,
@@ -410,8 +441,8 @@ const styles = StyleSheet.create({
   updated: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 10,
-    lineHeight: 16,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
     marginBottom: spacing.xl,
     marginTop: spacing.xl,
   },

@@ -1,30 +1,50 @@
+import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import {
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../../design-system/tokens";
 
 export const ADD_ACTIONS = [
   {
-    glyph: "▣",
+    glyph: {
+      android: "barcode_scanner",
+      ios: "barcode.viewfinder",
+      web: "barcode_scanner",
+    },
     label: "Scan Barcode",
     meta: "Package lookup · preview · confirm",
     demoMessage:
       "Open the package barcode scanner. A scan starts lookup only; nothing logs without preview confirmation.",
   },
   {
-    glyph: "✎",
+    glyph: {
+      android: "edit_note",
+      ios: "square.and.pencil",
+      web: "edit_note",
+    },
     label: "Manual Food Entry",
     meta: "Preview · review · confirm",
     demoMessage:
       "Open the manual entry form. Nothing logs before confirmation.",
   },
   {
-    glyph: "◇",
+    glyph: { android: "bookmark", ios: "bookmark.fill", web: "bookmark" },
     label: "Saved Foods",
     meta: "Your private reusable foods",
     demoMessage: "View your RLS-protected saved foods.",
   },
   {
-    glyph: "↗",
+    glyph: {
+      android: "chat",
+      ios: "bubble.left.and.text.bubble.right",
+      web: "chat",
+    },
     label: "Log with ChatGPT",
     meta: "Phase 6 · external handoff planned",
     demoMessage:
@@ -54,14 +74,20 @@ export function AddActionList({
             pressed && styles.pressed,
           ]}
         >
-          <Text
+          <View
             style={[
-              styles.glyph,
-              index === ADD_ACTIONS.length - 1 && styles.chatGlyph,
+              styles.glyphBox,
+              index === ADD_ACTIONS.length - 1 && styles.chatGlyphBox,
             ]}
           >
-            {action.glyph}
-          </Text>
+            <SymbolView
+              name={action.glyph}
+              size={25}
+              tintColor={
+                index === ADD_ACTIONS.length - 1 ? colors.calamansi : colors.ink
+              }
+            />
+          </View>
           <View style={styles.copy}>
             <Text
               style={[
@@ -80,13 +106,21 @@ export function AddActionList({
               {action.meta}
             </Text>
           </View>
-          <Text
+          <SymbolView
             accessibilityElementsHidden
             importantForAccessibility="no"
-            style={styles.chevron}
-          >
-            ›
-          </Text>
+            name={{
+              android: "chevron_right",
+              ios: "chevron.right",
+              web: "chevron_right",
+            }}
+            size={23}
+            tintColor={
+              index === ADD_ACTIONS.length - 1
+                ? colors.riceDark
+                : colors.inkFaint
+            }
+          />
         </Pressable>
       ))}
     </View>
@@ -94,7 +128,7 @@ export function AddActionList({
 }
 
 const styles = StyleSheet.create({
-  list: { gap: spacing.md, marginTop: spacing.lg },
+  list: { gap: 12, marginTop: spacing.lg },
   row: {
     alignItems: "center",
     backgroundColor: colors.paper,
@@ -102,29 +136,31 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     flexDirection: "row",
-    minHeight: 82,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    minHeight: 88,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    ...elevation.card,
   },
   chatRow: { backgroundColor: colors.ink, borderColor: colors.ink },
   pressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
-  glyph: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 22,
-    textAlign: "center",
-    width: 36,
+  glyphBox: {
+    alignItems: "center",
+    backgroundColor: colors.calamansiWash,
+    borderRadius: radius.md,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
   },
-  chatGlyph: { color: colors.calamansi },
+  chatGlyphBox: { backgroundColor: colors.inkRule },
   copy: { flex: 1, marginLeft: spacing.md },
-  label: { color: colors.ink, fontFamily: type.display, fontSize: 20 },
+  label: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 18 },
   chatLabel: { color: colors.rice },
   meta: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 11,
+    fontSize: typeScale.label,
+    lineHeight: 18,
     marginTop: 4,
   },
   chatMeta: { color: colors.riceDark },
-  chevron: { color: colors.inkFaint, fontFamily: type.display, fontSize: 28 },
 });

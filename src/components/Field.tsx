@@ -1,7 +1,13 @@
 import type { ComponentProps } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-import { colors, radius, spacing, type } from "../design-system/tokens";
+import {
+  colors,
+  radius,
+  spacing,
+  type,
+  typeScale,
+} from "../design-system/tokens";
 
 type Props = ComponentProps<typeof TextInput> & {
   error?: string;
@@ -41,26 +47,31 @@ export function Field({ error, hint, label, ...input }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.xs, marginTop: spacing.md },
-  label: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 13 },
+  label: {
+    color: colors.ink,
+    fontFamily: type.bodyStrong,
+    fontSize: typeScale.bodySmall,
+    lineHeight: 20,
+  },
   input: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
+    backgroundColor: colors.paperRaised,
+    borderColor: colors.ruleStrong,
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.ink,
     fontFamily: type.body,
-    fontSize: 16,
-    minHeight: 52,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    fontSize: typeScale.body,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   multiline: { minHeight: 92, textAlignVertical: "top" },
   errorInput: { borderColor: colors.tomato, borderWidth: 2 },
-  error: { color: "#9F2D17", fontFamily: type.bodyStrong, fontSize: 12 },
+  error: { color: colors.tomato, fontFamily: type.bodyStrong, fontSize: 12 },
   hint: {
     color: colors.inkFaint,
     fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: typeScale.caption,
+    lineHeight: 18,
   },
 });

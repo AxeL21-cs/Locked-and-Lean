@@ -1,19 +1,23 @@
 import { Platform } from "react-native";
 
 export const colors = {
-  ink: "#132019",
-  inkMuted: "#3E5246",
-  inkFaint: "#728077",
-  inkRule: "#33483B",
-  rice: "#F5F0E6",
-  riceDark: "#D9D1C4",
-  paper: "#FFFBF3",
-  rule: "#D5CABB",
-  calamansi: "#D9FF64",
-  calamansiDeep: "#5A7413",
-  tomato: "#FF6B4A",
-  tomatoWash: "#FFE1DA",
-  skyWash: "#DCE8E2",
+  ink: "#10241B",
+  inkMuted: "#40554A",
+  inkFaint: "#66786E",
+  inkRule: "#294237",
+  rice: "#F4F1E9",
+  riceDark: "#D8D3C8",
+  paper: "#FFFEFA",
+  paperRaised: "#FFFFFF",
+  rule: "#D6D4CA",
+  ruleStrong: "#AEB8B1",
+  calamansi: "#CFFF4F",
+  calamansiDeep: "#496B00",
+  calamansiWash: "#EBF8C8",
+  tomato: "#C8482D",
+  tomatoWash: "#FBE4DE",
+  skyWash: "#DCEBE4",
+  white: "#FFFFFF",
 } as const;
 
 export const spacing = {
@@ -24,27 +28,68 @@ export const spacing = {
   xl: 28,
   xxl: 40,
 } as const;
-export const radius = { sm: 8, md: 14, lg: 20, xl: 28, pill: 999 } as const;
+export const radius = { sm: 10, md: 16, lg: 22, xl: 30, pill: 999 } as const;
 
 export const type = {
   display: Platform.select({
-    ios: "Georgia-Bold",
-    android: "serif",
-    default: "Georgia",
+    ios: "Avenir Next Heavy",
+    android: "sans-serif-black",
+    default: "system-ui",
   }),
   body: Platform.select({
     ios: "Avenir Next",
     android: "sans-serif",
-    default: "sans-serif",
+    default: "system-ui",
   }),
   bodyStrong: Platform.select({
     ios: "Avenir Next Demi Bold",
     android: "sans-serif-medium",
-    default: "sans-serif",
+    default: "system-ui",
   }),
   label: Platform.select({
-    ios: "Avenir Next Condensed Demi Bold",
-    android: "sans-serif-condensed",
-    default: "sans-serif",
+    ios: "Avenir Next Demi Bold",
+    android: "sans-serif-medium",
+    default: "system-ui",
   }),
+  numeric: Platform.select({
+    ios: "Avenir Next Condensed Bold",
+    android: "sans-serif-medium",
+    default: "system-ui",
+  }),
+} as const;
+
+export const typeScale = {
+  caption: 12,
+  label: 13,
+  bodySmall: 14,
+  body: 16,
+  title: 20,
+  headline: 26,
+  display: 34,
+  hero: 56,
+} as const;
+
+export const elevation = {
+  card:
+    Platform.select({
+      android: { elevation: 2 },
+      ios: {
+        shadowColor: colors.ink,
+        shadowOffset: { height: 2, width: 0 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      web: { boxShadow: "0 2px 8px rgba(16, 36, 27, 0.08)" },
+    }) ?? {},
+  floating:
+    Platform.select({
+      android: { elevation: 8 },
+      ios: {
+        shadowColor: colors.ink,
+        shadowOffset: { height: 6, width: 0 },
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+      },
+      web: { boxShadow: "0 8px 24px rgba(16, 36, 27, 0.16)" },
+    }) ?? {},
 } as const;
