@@ -55,6 +55,9 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Deployed the transport compatibility fix as `dpl_Fa4LpJPi67qUJf12vGfcTVBat3ju` to the canonical MCP alias. A production JSON-only initialize now returns HTTP 200 with protocol `2025-11-25`; unauthenticated protected calls still return the OAuth challenge and `text/html` remains HTTP 406.
 - A later reconnect exposed the next SDK boundary: successful fresh OAuth sessions were followed by HTTP 415 because Vercel had already parsed ChatGPT's valid JSON body while preserving a text content type. The adapter now relabels only absent, JSON, or text/plain platform-parsed JSON as `application/json`; unrelated content types and invalid JSON remain rejected.
 - Deployed the tightened content-type compatibility fix as `dpl_4AgDe36YxX6RZofXnJDYjbrtnrPo`. The canonical production alias returns HTTP 200 for the reproduced text/plain JSON initialize and HTTP 415 for unrelated XML content.
+- Reproduced the remaining reconnect failure through the connector itself. Supabase authorization-code/PKCE, token exchange, refresh-token issuance, and the access-token hook all succeeded, but the production MCP health surface reported `missing_client_action_policy`; this forced every protected request through the fail-closed verifier before repository access. Restored the exact reviewed client/action allowlist for calendar reads plus preview, revision, and exact confirmation.
+- Corrected the host authorization handshake without broadening accepted input. The exact unauthenticated wildcard/octet-stream probe now receives HTTP 401 with `resource_metadata` and `scope="openid"` before media validation, while authenticated binary and unrelated XML remain HTTP 415. Missing credentials omit `error` fields; malformed or rejected credentials still use safe `invalid_token` challenges.
+- Deployed the combined fix as `dpl_DzYYDXCnN5E3HVPdbtdAef1QmCbQ`. Production health now reports authentication and repository both configured, the canonical handshake probe returns the expected Bearer challenge instead of HTTP 415, and a real approved `get_calendar_history` invocation completed through the connected Locked and Lean plugin without a reconnect prompt.
 
 ## Blocked work
 
@@ -100,7 +103,9 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Current repository gate: `npm run check` passed 160 mobile tests, 44 static/security contracts, 36 MCP tests plus typecheck/build, formatting/lint/typecheck, and the prohibited OpenAI model API scan.
 - Post-reconnect focused MCP gate: format, typecheck, 38/38 Node tests, and production build passed, including the JSON-only post-OAuth reproduction and unrelated-media rejection.
 - Post-content-type focused MCP gate: format, typecheck, 40/40 Node tests, and production build passed, including platform-parsed text JSON acceptance and unrelated content-type rejection.
+- Post-authorization-handshake MCP gate: format, typecheck, 43/43 Node tests, and production build passed. The repository static/security suite passed 44/44, and the prohibited OpenAI model API scan passed.
 - Hosted verification: migration history contains `20260716110100`; all four preview/revision wrappers and bridges have the expected security modes and grants; the canonical production MCP alias exposes 12 tools with the complete preview/revision schemas; and an unauthenticated preview returns the OAuth challenge before repository access.
+- Hosted reconnect verification: coarse health changed from `locked` to `degraded` after the reviewed allowlist was restored; authentication and repository are both configured. The live wildcard/octet-stream probe returns HTTP 401 with the canonical protected-resource challenge, and the approved connector calendar read returned one owner-scoped Manila day without reauthentication.
 
 ## Security status
 
@@ -119,7 +124,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Physical Android verification at 200% system font scale, TalkBack traversal, and low-end-device frame profiling remain required for the redesigned interface.
 - The existing allowlisted ChatGPT client can preview, revise, and exactly confirm a food log. General clients and update/copy/weight/delete writes remain blocked; the first real ChatGPT exact-confirmation and post-expiry/revocation evidence are still outstanding.
 - Multi-item saved-meal composition is not yet exposed by the mobile adapter; the current UI supports saved foods and confirmed-entry copy previews. Recent quick logging uses yesterday plus locally confirmed usuals rather than a server-wide recent list.
-- Hosted authorization-code/PKCE, real ChatGPT linking, MCP Inspector, revocation behavior, TLS/proxy/rate limits, chunked-body bounding, and production telemetry retention remain unverified.
+- Hosted authorization-code/PKCE and real ChatGPT linking are now evidenced by successful Auth logs and an approved connector action. Post-expiry refresh/revocation behavior, MCP Inspector, TLS/proxy/rate limits, chunked-body bounding, and production telemetry retention remain unverified.
 
 ## Next actions
 

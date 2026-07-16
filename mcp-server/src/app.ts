@@ -10,7 +10,10 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
-import { createWwwAuthenticateChallenge } from "./auth/challenge.js";
+import {
+  createMissingBearerChallenge,
+  createWwwAuthenticateChallenge,
+} from "./auth/challenge.js";
 import type { RuntimeConfig } from "./config/runtime.js";
 import { protectedResourceMetadata } from "./http/protectedResource.js";
 import { TOOL_DEFINITIONS } from "./tools/catalog.js";
@@ -133,6 +136,72 @@ function normalizeMcpPostAcceptHeader(request: IncomingMessage): void {
   }
 }
 
+function boundedHeader(value: string | string[] | undefined): string | null {
+  const text = Array.isArray(value) ? value.join(",") : value;
+  return text ? text.slice(0, 160) : null;
+}
+
+function bodyShape(value: unknown): string {
+  if (value === undefined) return "absent";
+  if (value === null) return "null";
+  if (Buffer.isBuffer(value)) return "buffer";
+  if (value instanceof Uint8Array) return "uint8array";
+  if (Array.isArray(value)) return "array";
+  return typeof value;
+}
+
+function attachMcpTransportDiagnostic(
+  request: IncomingMessage,
+  response: ServerResponse,
+  credentialState: "none" | "valid",
+): void {
+  if (process.env.VERCEL !== "1") return;
+
+  const startedAt = Date.now();
+  const platformBody = (request as IncomingMessage & { body?: unknown }).body;
+  const received = {
+    accept: boundedHeader(request.headers.accept),
+    contentType: boundedHeader(request.headers["content-type"]),
+    contentLength: boundedHeader(request.headers["content-length"]),
+    transferEncoding: boundedHeader(request.headers["transfer-encoding"]),
+    platformBodyShape: bodyShape(platformBody),
+  };
+
+  response.once("finish", () => {
+    // Operational metadata only: never include headers wholesale, credentials,
+    // request bodies, meal text, subjects, or other user data.
+    console.info(
+      "[mcp.transport]",
+      JSON.stringify({
+        status: response.statusCode,
+        durationMs: Date.now() - startedAt,
+        credentialState,
+        received,
+        handledAs: {
+          accept: boundedHeader(request.headers.accept),
+          contentType: boundedHeader(request.headers["content-type"]),
+        },
+      }),
+    );
+  });
+}
+
+function isUnauthenticatedHostAuthorizationProbe(
+  request: IncomingMessage,
+  credentialState: "none" | "valid",
+): boolean {
+  const accept = request.headers.accept?.toLowerCase().trim();
+  const contentType = request.headers["content-type"]
+    ?.toLowerCase()
+    .split(";", 1)[0]
+    ?.trim();
+  return (
+    credentialState === "none" &&
+    accept === "*/*" &&
+    contentType === "application/octet-stream"
+  );
+}
+
 function platformParsedMcpBody(request: IncomingMessage): unknown {
   const platformBody = (request as IncomingMessage & { body?: unknown }).body;
   if (platformBody === undefined) return undefined;
@@ -147,6 +216,9 @@ function platformParsedMcpBody(request: IncomingMessage): unknown {
   }
 
   let parsedBody: unknown = platformBody;
+  if (Buffer.isBuffer(parsedBody) || parsedBody instanceof Uint8Array) {
+    parsedBody = Buffer.from(parsedBody).toString("utf8");
+  }
   if (typeof parsedBody === "string") {
     try {
       parsedBody = JSON.parse(parsedBody) as unknown;
@@ -216,6 +288,21 @@ export function createHttpHandler(
           }
         : {};
       json(response, 401, { error: "invalid_authorization_header" }, headers);
+      return;
+    }
+
+    attachMcpTransportDiagnostic(request, response, bearer.kind);
+    if (isUnauthenticatedHostAuthorizationProbe(request, bearer.kind)) {
+      const metadataUrl = dependencies.config.protectedResourceMetadataUrl;
+      const headers = metadataUrl
+        ? {
+            "WWW-Authenticate": createMissingBearerChallenge({
+              protectedResourceMetadataUrl: metadataUrl,
+              scope: "openid",
+            }),
+          }
+        : {};
+      json(response, 401, { error: "authentication_required" }, headers);
       return;
     }
 

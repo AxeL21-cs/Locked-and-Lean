@@ -9,6 +9,11 @@ export interface AuthenticationChallengeOptions {
   scope?: string;
 }
 
+export interface MissingBearerChallengeOptions {
+  protectedResourceMetadataUrl: string;
+  scope?: string;
+}
+
 function quoteChallengeValue(value: string): string {
   return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
@@ -20,6 +25,18 @@ export function createWwwAuthenticateChallenge(
     `resource_metadata=${quoteChallengeValue(options.protectedResourceMetadataUrl)}`,
     `error=${quoteChallengeValue(options.error)}`,
     `error_description=${quoteChallengeValue(options.description)}`,
+  ];
+  if (options.scope) {
+    parameters.push(`scope=${quoteChallengeValue(options.scope)}`);
+  }
+  return `Bearer ${parameters.join(", ")}`;
+}
+
+export function createMissingBearerChallenge(
+  options: MissingBearerChallengeOptions,
+): string {
+  const parameters = [
+    `resource_metadata=${quoteChallengeValue(options.protectedResourceMetadataUrl)}`,
   ];
   if (options.scope) {
     parameters.push(`scope=${quoteChallengeValue(options.scope)}`);

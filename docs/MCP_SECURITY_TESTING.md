@@ -23,6 +23,7 @@ The MCP server must expose OAuth Protected Resource Metadata at the well-known e
 - `scopes_supported` contains only standard scopes the issuer actually supports;
 - custom application scopes never appear in protected-resource metadata, tool descriptors, challenges, or consent fixtures;
 - a malformed HTTP `Authorization` header returns `401 Unauthorized`, while unauthenticated MCP discovery can still expose per-tool auth metadata;
+- the host's unauthenticated wildcard/octet-stream authorization probe receives `401 Unauthorized` with `resource_metadata` and `scope="openid"` before media-type validation; because the request supplied no credential, this challenge omits `error` and `error_description` as required by RFC 6750;
 - the HTTP `WWW-Authenticate` value uses the `Bearer` scheme and includes the exact `resource_metadata` URL; and
 - a protected tool authentication error is an MCP error result with `isError: true` and `_meta["mcp/www_authenticate"]`, including a safe `error` and `error_description` without echoing the token.
 
@@ -33,10 +34,12 @@ advertise only `application/json` (as well as the HTTP wildcard or a single
 MCP response type) by normalizing them to the two response media types required
 by the SDK transport. When Vercel has already parsed a syntactically valid JSON
 body, the adapter also normalizes an absent, JSON, or text/plain content type to
-`application/json`. It does not normalize unrelated preferences such as
-`text/html` or content types such as XML; those still receive HTTP 406 or 415.
-This is transport compatibility only; bearer verification and tool
-authorization are unchanged.
+`application/json`. A narrow unauthenticated `Accept: */*` plus
+`Content-Type: application/octet-stream` host probe is challenged before body
+parsing; it is never relabeled as JSON. Authenticated binary input, unrelated
+preferences such as `text/html`, and content types such as XML still receive
+HTTP 415 or 406. This is transport compatibility only; bearer verification and
+tool authorization are unchanged.
 
 ## Tool annotation matrix
 

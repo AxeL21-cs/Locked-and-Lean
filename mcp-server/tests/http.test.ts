@@ -54,7 +54,8 @@ async function withServer(
   }
 }
 
-async function withParsedBodyServer(
+async function withPlatformBodyServer(
+  bodyFromText: (text: string) => unknown,
   run: (baseUrl: string) => Promise<void>,
 ): Promise<void> {
   const handler = createHttpHandler(runtime());
@@ -64,9 +65,7 @@ async function withParsedBodyServer(
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     }
     const text = Buffer.concat(chunks).toString("utf8");
-    (request as typeof request & { body?: unknown }).body = text
-      ? JSON.parse(text)
-      : undefined;
+    (request as typeof request & { body?: unknown }).body = bodyFromText(text);
     await handler(request, response);
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -79,6 +78,21 @@ async function withParsedBodyServer(
       server.close((error) => (error ? reject(error) : resolve())),
     );
   }
+}
+
+function withParsedBodyServer(
+  run: (baseUrl: string) => Promise<void>,
+): Promise<void> {
+  return withPlatformBodyServer(
+    (text) => (text ? JSON.parse(text) : undefined),
+    run,
+  );
+}
+
+function withBufferedBodyServer(
+  run: (baseUrl: string) => Promise<void>,
+): Promise<void> {
+  return withPlatformBodyServer((text) => Buffer.from(text, "utf8"), run);
 }
 
 test("publishes canonical protected-resource metadata with standard scopes", () =>
@@ -111,6 +125,10 @@ test("malformed bearer header returns HTTP 401 and RFC challenge", () =>
     assert.match(
       response.headers.get("www-authenticate") ?? "",
       /^Bearer resource_metadata=/,
+    );
+    assert.match(
+      response.headers.get("www-authenticate") ?? "",
+      /error="invalid_token"/,
     );
   }));
 
@@ -252,6 +270,72 @@ test("accepts a valid platform-parsed body with ChatGPT's text content type", ()
     assert.equal(body.result?.serverInfo?.name, "locked-and-lean-mcp");
   }));
 
+test("accepts a platform-buffered JSON request body", () =>
+  withBufferedBodyServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 6,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-11-25",
+          capabilities: {},
+          clientInfo: { name: "buffered-json-test", version: "1.0.0" },
+        },
+      }),
+    });
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as {
+      result?: { serverInfo?: { name?: string } };
+    };
+    assert.equal(body.result?.serverInfo?.name, "locked-and-lean-mcp");
+  }));
+
+test("challenges the unauthenticated host authorization probe before media parsing", () =>
+  withBufferedBodyServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "*/*",
+        "Content-Type": "application/octet-stream",
+      },
+    });
+    assert.equal(response.status, 401);
+    const challenge = response.headers.get("www-authenticate") ?? "";
+    assert.match(challenge, /^Bearer resource_metadata=/);
+    assert.match(challenge, /scope="openid"/);
+    assert.doesNotMatch(challenge, /(?:^|,\s*)error=/);
+    assert.doesNotMatch(challenge, /error_description=/);
+  }));
+
+test("does not relabel an unparsed binary request", () =>
+  withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "*/*",
+        Authorization: "Bearer syntactically-valid-token",
+        "Content-Type": "application/octet-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 7,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-11-25",
+          capabilities: {},
+          clientInfo: { name: "unparsed-binary-test", version: "1.0.0" },
+        },
+      }),
+    });
+    assert.equal(response.status, 415);
+  }));
+
 test("does not relabel an unrelated platform-parsed content type", () =>
   withParsedBodyServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/mcp`, {
@@ -262,7 +346,7 @@ test("does not relabel an unrelated platform-parsed content type", () =>
       },
       body: JSON.stringify({
         jsonrpc: "2.0",
-        id: 6,
+        id: 8,
         method: "initialize",
         params: {
           protocolVersion: "2025-11-25",
