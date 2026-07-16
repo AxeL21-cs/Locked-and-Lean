@@ -112,6 +112,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Android and web production exports passed. The Android Hermes bundle includes both supplied brand assets; the web export produced all 28 static routes.
 - Phone-size visual verification passed at 412x915 in light and OLED-dark modes: the correct artwork and canvas colors rendered, the sign-in and registration routes were meaningful and navigable, and agent-browser found no error overlay or browser errors.
 - The mobile-design audit reported eight heuristic touch-size findings. Manual inspection confirmed they are text line heights, chart markers, skeleton bars, or visual icon containers inside 48-82dp controls; the actual interactive targets in those locations remain at least 48dp.
+- Android EAS production build `b8ebfffa-f159-43b0-b8c4-f99f14cacdeb` finished for version 0.4.0 (versionCode 4). The downloaded 133,287,929-byte APK contains `AndroidManifest.xml`, five DEX files, and 104 native-library entries; SHA-256 is `217707EED2EB7FA8A2AAC0A014211E08CD7FA9CF3F2C5D0753FCBA438D84EEF2`.
 
 ## Security status
 
