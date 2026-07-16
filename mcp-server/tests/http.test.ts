@@ -152,6 +152,54 @@ test("accepts an MCP initialize request over Streamable HTTP", () =>
     assert.ok(body.result?.capabilities);
   }));
 
+test("accepts ChatGPT's JSON-only post-OAuth MCP request", () =>
+  withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-11-25",
+          capabilities: {},
+          clientInfo: { name: "post-oauth-test", version: "1.0.0" },
+        },
+      }),
+    });
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as {
+      result?: { serverInfo?: { name?: string } };
+    };
+    assert.equal(body.result?.serverInfo?.name, "locked-and-lean-mcp");
+  }));
+
+test("does not override an unrelated Accept media type", () =>
+  withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "text/html",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-11-25",
+          capabilities: {},
+          clientInfo: { name: "unsupported-client", version: "1.0.0" },
+        },
+      }),
+    });
+    assert.equal(response.status, 406);
+  }));
+
 test("accepts a platform-preparsed MCP request body", () =>
   withParsedBodyServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/mcp`, {

@@ -104,6 +104,27 @@ function methodNotAllowed(response: ServerResponse): void {
   });
 }
 
+function normalizeMcpPostAcceptHeader(request: IncomingMessage): void {
+  const accept = request.headers.accept?.toLowerCase().trim();
+  if (
+    !accept ||
+    accept === "*/*" ||
+    accept.includes("application/json") ||
+    accept.includes("text/event-stream")
+  ) {
+    const normalized = "application/json, text/event-stream";
+    request.headers.accept = normalized;
+    const acceptIndex = request.rawHeaders.findIndex(
+      (value, index) => index % 2 === 0 && value.toLowerCase() === "accept",
+    );
+    if (acceptIndex >= 0) {
+      request.rawHeaders[acceptIndex + 1] = normalized;
+    } else {
+      request.rawHeaders.push("Accept", normalized);
+    }
+  }
+}
+
 export function createHttpHandler(
   dependencies: AppDependencies,
 ): (request: IncomingMessage, response: ServerResponse) => Promise<void> {
@@ -165,6 +186,12 @@ export function createHttpHandler(
     const context = dependencies.executionContext(
       bearer.kind === "valid" ? bearer.token : null,
     );
+    // ChatGPT can send a JSON-only or wildcard Accept header on the first
+    // post-OAuth MCP request. The SDK requires both response media types even
+    // though this server has JSON responses enabled. Normalize only clients
+    // that already accept an MCP response type (or the HTTP wildcard); leave
+    // unrelated media types to the SDK's 406 response.
+    normalizeMcpPostAcceptHeader(request);
     const server = createProtocolServer(context);
     const transport = new StreamableHTTPServerTransport({
       enableJsonResponse: true,

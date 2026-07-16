@@ -28,6 +28,13 @@ The MCP server must expose OAuth Protected Resource Metadata at the well-known e
 
 Apps SDK tool descriptors must declare `securitySchemes` per tool and mirror the declaration in `_meta.securitySchemes` for compatibility. A health-only surface may use `noauth`; no user record or protected repository call may be reachable through it.
 
+The hosted Node adapter tolerates the post-OAuth ChatGPT request variant that
+advertises only `application/json` (as well as the HTTP wildcard or a single
+MCP response type) by normalizing it to the two response media types required
+by the SDK transport. It does not normalize unrelated preferences such as
+`text/html`, which must still receive HTTP 406. This is transport compatibility
+only; bearer verification and tool authorization are unchanged.
+
 ## Tool annotation matrix
 
 Annotations must describe behavior truthfully and must not be used to authorize calls.

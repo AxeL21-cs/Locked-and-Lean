@@ -51,6 +51,8 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Added OAuth-only ChatGPT preview creation and complete-snapshot revision RPCs. They derive owner/client from the token, require exact action rows, force estimate provenance and uncertainty, calculate totals in PostgreSQL, preserve immutable revisions, and cannot create permanent history.
 - Replaced the MCP preview/revision kill-switch with the reviewed RPCs while preserving the separate exact-revision, literal-confirmation, transactional, and idempotent permanent-write gate.
 - Deployed migration `20260716110100` and MCP deployment `dpl_4bby4KEpVMMhDRPuGE3ARtyRzVgs`; the existing consented ChatGPT client is restricted to calendar reads plus preview, revision, and exact confirmation.
+- Traced repeated ChatGPT reconnects through live Auth and MCP request logs: PKCE authorization, token exchange, access-token hook, audience/resource binding, and refresh-token creation succeeded, but ChatGPT's first post-login MCP request received HTTP 406 because it advertised JSON without the SDK-required event-stream media type. Added a narrow compatible `Accept` normalization for JSON, event-stream, wildcard, or absent MCP response preferences while preserving 406 for unrelated media types.
+- Deployed the transport compatibility fix as `dpl_Fa4LpJPi67qUJf12vGfcTVBat3ju` to the canonical MCP alias. A production JSON-only initialize now returns HTTP 200 with protocol `2025-11-25`; unauthenticated protected calls still return the OAuth challenge and `text/html` remains HTTP 406.
 
 ## Blocked work
 
@@ -94,6 +96,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Android EAS production build `e5421785-c90d-45a1-8d48-a4ed272d39b1` finished for version 0.3.0 (build 3). The downloaded 129,913,082-byte APK contains `AndroidManifest.xml` and five DEX files; SHA-256 is `8F452B8A35954123D91979548AFEE1AB6C7B823EC7A04CAD2F904D7D03C03DEB`.
 - ChatGPT preview database gate: the full clean local directory passed 329/329 pgTAP assertions across ten suites; application-schema lint returned no errors.
 - Current repository gate: `npm run check` passed 160 mobile tests, 44 static/security contracts, 36 MCP tests plus typecheck/build, formatting/lint/typecheck, and the prohibited OpenAI model API scan.
+- Post-reconnect focused MCP gate: format, typecheck, 38/38 Node tests, and production build passed, including the JSON-only post-OAuth reproduction and unrelated-media rejection.
 - Hosted verification: migration history contains `20260716110100`; all four preview/revision wrappers and bridges have the expected security modes and grants; the canonical production MCP alias exposes 12 tools with the complete preview/revision schemas; and an unauthenticated preview returns the OAuth challenge before repository access.
 
 ## Security status
