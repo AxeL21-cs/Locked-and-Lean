@@ -53,6 +53,8 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Deployed migration `20260716110100` and MCP deployment `dpl_4bby4KEpVMMhDRPuGE3ARtyRzVgs`; the existing consented ChatGPT client is restricted to calendar reads plus preview, revision, and exact confirmation.
 - Traced repeated ChatGPT reconnects through live Auth and MCP request logs: PKCE authorization, token exchange, access-token hook, audience/resource binding, and refresh-token creation succeeded, but ChatGPT's first post-login MCP request received HTTP 406 because it advertised JSON without the SDK-required event-stream media type. Added a narrow compatible `Accept` normalization for JSON, event-stream, wildcard, or absent MCP response preferences while preserving 406 for unrelated media types.
 - Deployed the transport compatibility fix as `dpl_Fa4LpJPi67qUJf12vGfcTVBat3ju` to the canonical MCP alias. A production JSON-only initialize now returns HTTP 200 with protocol `2025-11-25`; unauthenticated protected calls still return the OAuth challenge and `text/html` remains HTTP 406.
+- A later reconnect exposed the next SDK boundary: successful fresh OAuth sessions were followed by HTTP 415 because Vercel had already parsed ChatGPT's valid JSON body while preserving a text content type. The adapter now relabels only absent, JSON, or text/plain platform-parsed JSON as `application/json`; unrelated content types and invalid JSON remain rejected.
+- Deployed the tightened content-type compatibility fix as `dpl_4AgDe36YxX6RZofXnJDYjbrtnrPo`. The canonical production alias returns HTTP 200 for the reproduced text/plain JSON initialize and HTTP 415 for unrelated XML content.
 
 ## Blocked work
 
@@ -97,6 +99,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - ChatGPT preview database gate: the full clean local directory passed 329/329 pgTAP assertions across ten suites; application-schema lint returned no errors.
 - Current repository gate: `npm run check` passed 160 mobile tests, 44 static/security contracts, 36 MCP tests plus typecheck/build, formatting/lint/typecheck, and the prohibited OpenAI model API scan.
 - Post-reconnect focused MCP gate: format, typecheck, 38/38 Node tests, and production build passed, including the JSON-only post-OAuth reproduction and unrelated-media rejection.
+- Post-content-type focused MCP gate: format, typecheck, 40/40 Node tests, and production build passed, including platform-parsed text JSON acceptance and unrelated content-type rejection.
 - Hosted verification: migration history contains `20260716110100`; all four preview/revision wrappers and bridges have the expected security modes and grants; the canonical production MCP alias exposes 12 tools with the complete preview/revision schemas; and an unauthenticated preview returns the OAuth challenge before repository access.
 
 ## Security status

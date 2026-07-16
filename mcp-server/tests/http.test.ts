@@ -225,3 +225,51 @@ test("accepts a platform-preparsed MCP request body", () =>
     };
     assert.equal(body.result?.serverInfo?.name, "locked-and-lean-mcp");
   }));
+
+test("accepts a valid platform-parsed body with ChatGPT's text content type", () =>
+  withParsedBodyServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 5,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-11-25",
+          capabilities: {},
+          clientInfo: { name: "post-login-test", version: "1.0.0" },
+        },
+      }),
+    });
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as {
+      result?: { serverInfo?: { name?: string } };
+    };
+    assert.equal(body.result?.serverInfo?.name, "locked-and-lean-mcp");
+  }));
+
+test("does not relabel an unrelated platform-parsed content type", () =>
+  withParsedBodyServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/xml",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 6,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-11-25",
+          capabilities: {},
+          clientInfo: { name: "wrong-media-test", version: "1.0.0" },
+        },
+      }),
+    });
+    assert.equal(response.status, 415);
+  }));

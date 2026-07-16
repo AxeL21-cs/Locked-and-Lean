@@ -104,6 +104,23 @@ function methodNotAllowed(response: ServerResponse): void {
   });
 }
 
+function setIncomingHeader(
+  request: IncomingMessage,
+  name: string,
+  value: string,
+): void {
+  request.headers[name.toLowerCase()] = value;
+  const headerIndex = request.rawHeaders.findIndex(
+    (candidate, index) =>
+      index % 2 === 0 && candidate.toLowerCase() === name.toLowerCase(),
+  );
+  if (headerIndex >= 0) {
+    request.rawHeaders[headerIndex + 1] = value;
+  } else {
+    request.rawHeaders.push(name, value);
+  }
+}
+
 function normalizeMcpPostAcceptHeader(request: IncomingMessage): void {
   const accept = request.headers.accept?.toLowerCase().trim();
   if (
@@ -112,17 +129,36 @@ function normalizeMcpPostAcceptHeader(request: IncomingMessage): void {
     accept.includes("application/json") ||
     accept.includes("text/event-stream")
   ) {
-    const normalized = "application/json, text/event-stream";
-    request.headers.accept = normalized;
-    const acceptIndex = request.rawHeaders.findIndex(
-      (value, index) => index % 2 === 0 && value.toLowerCase() === "accept",
-    );
-    if (acceptIndex >= 0) {
-      request.rawHeaders[acceptIndex + 1] = normalized;
-    } else {
-      request.rawHeaders.push("Accept", normalized);
+    setIncomingHeader(request, "Accept", "application/json, text/event-stream");
+  }
+}
+
+function platformParsedMcpBody(request: IncomingMessage): unknown {
+  const platformBody = (request as IncomingMessage & { body?: unknown }).body;
+  if (platformBody === undefined) return undefined;
+
+  const contentType = request.headers["content-type"]?.toLowerCase().trim();
+  if (
+    contentType &&
+    !contentType.includes("application/json") &&
+    !contentType.startsWith("text/plain")
+  ) {
+    return platformBody;
+  }
+
+  let parsedBody: unknown = platformBody;
+  if (typeof parsedBody === "string") {
+    try {
+      parsedBody = JSON.parse(parsedBody) as unknown;
+    } catch {
+      return platformBody;
     }
   }
+
+  if (parsedBody !== null && typeof parsedBody === "object") {
+    setIncomingHeader(request, "Content-Type", "application/json");
+  }
+  return parsedBody;
 }
 
 export function createHttpHandler(
@@ -183,6 +219,7 @@ export function createHttpHandler(
       return;
     }
 
+    const parsedBody = platformParsedMcpBody(request);
     const context = dependencies.executionContext(
       bearer.kind === "valid" ? bearer.token : null,
     );
@@ -200,7 +237,6 @@ export function createHttpHandler(
       // SDK 1.29's transport declarations predate exactOptionalPropertyTypes;
       // the runtime object implements the same MCP Transport interface.
       await server.connect(transport as Parameters<Server["connect"]>[0]);
-      const parsedBody = (request as IncomingMessage & { body?: unknown }).body;
       await transport.handleRequest(request, response, parsedBody);
     } catch {
       if (!response.headersSent) {
