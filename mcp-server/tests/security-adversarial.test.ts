@@ -467,7 +467,8 @@ test("cross-user or repository authorization denial is generic and challenge-saf
   );
 
   assert.equal(result.isError, true);
-  assert.ok(Array.isArray(result._meta?.["mcp/www_authenticate"]));
+  assert.deepEqual(result.structuredContent, { code: "authorization_denied" });
+  assert.equal(result._meta, undefined);
   assert.doesNotMatch(JSON.stringify(result), /owner_row_not_found/);
   assert.doesNotMatch(JSON.stringify(result), /62000000-0000-4000-8000/);
 });

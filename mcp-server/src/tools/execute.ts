@@ -26,6 +26,32 @@ export interface ToolExecutionContext {
     productionReady: false;
     blockers: readonly string[];
   };
+  now?: () => Date;
+}
+
+function manilaDate(now: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+function addDays(localDate: string, days: number): string {
+  const date = new Date(`${localDate}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function finiteNumber(value: unknown): number | null {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : NaN;
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function records(value: unknown): Record<string, unknown>[] {
@@ -65,8 +91,13 @@ function missingRepositoryResult(): CallToolResult {
 function repositoryParams(
   definition: ToolDefinition,
   input: Record<string, unknown>,
+  today: string,
 ): Record<string, unknown> {
   switch (definition.name) {
+    case "get_today_calories":
+      return { p_start_date: today, p_end_date: today };
+    case "get_weekly_protein_average":
+      return { p_start_date: addDays(today, -6), p_end_date: today };
     case "get_calendar_history":
     case "get_progress_summary":
     case "get_weight_trend":
@@ -118,8 +149,77 @@ function repositoryParams(
 function shapeResult(
   definition: ToolDefinition,
   value: unknown,
+  today: string,
 ): CallToolResult {
   switch (definition.name) {
+    case "get_today_calories": {
+      const day = firstRecord(value);
+      if (!day || day.local_date !== today) return missingRepositoryResult();
+      const consumed = finiteNumber(day.consumed_calories);
+      const target = finiteNumber(day.calorie_target);
+      const entryCount = finiteNumber(day.entry_count);
+      if (consumed === null || consumed < 0 || entryCount === null) {
+        return missingRepositoryResult();
+      }
+      const structuredContent = {
+        local_date: today,
+        consumed_calories: consumed,
+        calorie_target: target,
+        calories_remaining: target === null ? null : target - consumed,
+        entry_count: entryCount,
+        manila_time_zone: "Asia/Manila" as const,
+      };
+      return success(
+        structuredContent,
+        target === null
+          ? `${consumed} calories have been logged today. No active calorie target was returned.`
+          : `${consumed} calories have been logged today; ${target - consumed} remain relative to the active target.`,
+      );
+    }
+    case "get_weekly_protein_average": {
+      const startDate = addDays(today, -6);
+      const days = records(value);
+      const byDate = new Map(days.map((day) => [String(day.local_date), day]));
+      const dates = Array.from({ length: 7 }, (_, index) =>
+        addDays(startDate, index),
+      );
+      const incompleteDates = dates.filter((date) => {
+        const day = byDate.get(date);
+        return (
+          !day ||
+          day.macro_data_complete !== true ||
+          finiteNumber(day.consumed_protein_g) === null
+        );
+      });
+      const complete = incompleteDates.length === 0;
+      const total = complete
+        ? dates.reduce(
+            (sum, date) =>
+              sum + (finiteNumber(byDate.get(date)?.consumed_protein_g) ?? 0),
+            0,
+          )
+        : null;
+      const daysWithEntries = dates.filter(
+        (date) => (finiteNumber(byDate.get(date)?.entry_count) ?? 0) > 0,
+      ).length;
+      const structuredContent = {
+        start_date: startDate,
+        end_date: today,
+        calendar_day_count: 7 as const,
+        days_with_entries: daysWithEntries,
+        total_protein_g: total,
+        average_daily_protein_g: total === null ? null : total / 7,
+        macro_data_complete: complete,
+        incomplete_dates: incompleteDates,
+        manila_time_zone: "Asia/Manila" as const,
+      };
+      return success(
+        structuredContent,
+        complete
+          ? `The seven-day daily protein average is ${total! / 7} grams.`
+          : "A weekly protein average cannot be calculated because one or more days have incomplete macro data.",
+      );
+    }
     case "get_calendar_history": {
       const days = records(value);
       return success({ days }, `Read ${days.length} Manila calendar days.`);
@@ -182,6 +282,19 @@ function configurationError(): CallToolResult {
       {
         type: "text",
         text: "This protected tool is not configured for runtime use.",
+      },
+    ],
+  };
+}
+
+function authorizationDeniedResult(): CallToolResult {
+  return {
+    isError: true,
+    structuredContent: { code: "authorization_denied" },
+    content: [
+      {
+        type: "text",
+        text: "The linked account or connector client is not authorized for this action. Reconnecting will not change a server-side policy denial.",
       },
     ],
   };
@@ -251,6 +364,7 @@ export async function executeTool(
       action: definition.action,
       requiredScopes: ["openid"],
     });
+    const today = manilaDate(context.now?.() ?? new Date());
     if (
       definition.action === "preview_food_log" ||
       definition.action === "revise_food_log_preview"
@@ -263,29 +377,41 @@ export async function executeTool(
       params: repositoryParams(
         definition,
         parsed.data as Record<string, unknown>,
+        today,
       ),
     });
-    return shapeResult(definition, value);
+    return shapeResult(definition, value, today);
   } catch (error) {
     if (error instanceof TokenVerificationError) {
+      if (error.code === "client_action_denied") {
+        return {
+          isError: true,
+          structuredContent: { code: "oauth_client_not_approved" },
+          content: [
+            {
+              type: "text",
+              text: "This connector client is not approved for the requested action. Reconnecting will not change that policy; an administrator must approve this exact OAuth client ID.",
+            },
+          ],
+        };
+      }
       return createAuthenticationToolResult({
         protectedResourceMetadataUrl: context.protectedResourceMetadataUrl,
         error: challengeErrorForCode(error.code),
-        description:
-          error.code === "client_action_denied"
-            ? "This OAuth client is not authorized for the requested action."
-            : "A valid linked account is required.",
+        description: "A valid linked account is required.",
+        ...(error.code === "insufficient_scope" ? { scope: "openid" } : {}),
       });
     }
-    if (
-      error instanceof RepositoryRequestError &&
-      (error.status === 401 || error.status === 403)
-    ) {
+    if (error instanceof RepositoryRequestError && error.status === 401) {
       return createAuthenticationToolResult({
         protectedResourceMetadataUrl: context.protectedResourceMetadataUrl,
-        error: "insufficient_scope",
-        description: "The linked account is not authorized for this action.",
+        error: "invalid_token",
+        description:
+          "The linked account token was rejected by the data service.",
       });
+    }
+    if (error instanceof RepositoryRequestError && error.status === 403) {
+      return authorizationDeniedResult();
     }
     if (
       error instanceof RepositoryUnavailableError ||

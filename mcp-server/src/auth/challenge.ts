@@ -6,6 +6,7 @@ export interface AuthenticationChallengeOptions {
   protectedResourceMetadataUrl: string;
   error: "invalid_token" | "insufficient_scope";
   description: string;
+  scope?: string;
 }
 
 function quoteChallengeValue(value: string): string {
@@ -15,11 +16,15 @@ function quoteChallengeValue(value: string): string {
 export function createWwwAuthenticateChallenge(
   options: AuthenticationChallengeOptions,
 ): string {
-  return `Bearer ${[
+  const parameters = [
     `resource_metadata=${quoteChallengeValue(options.protectedResourceMetadataUrl)}`,
     `error=${quoteChallengeValue(options.error)}`,
     `error_description=${quoteChallengeValue(options.description)}`,
-  ].join(", ")}`;
+  ];
+  if (options.scope) {
+    parameters.push(`scope=${quoteChallengeValue(options.scope)}`);
+  }
+  return `Bearer ${parameters.join(", ")}`;
 }
 
 export function challengeErrorForCode(

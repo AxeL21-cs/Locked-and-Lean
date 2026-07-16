@@ -1,5 +1,6 @@
 import type { BarcodeScanningResult } from "expo-camera";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as Haptics from "expo-haptics";
 import { useMemo, useRef, useState } from "react";
 import {
   Linking,
@@ -350,6 +351,7 @@ export function BarcodeScannerFlow({
       );
     } catch (error) {
       setLookupError(error);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       scanInFlight.current = false;
       setLookingUp(false);
@@ -371,6 +373,7 @@ export function BarcodeScannerFlow({
       return;
     }
     scanInFlight.current = true;
+    void Haptics.selectionAsync();
     setLastBarcode(decision.barcode.digits);
     return runLookup(decision.barcode.digits);
   };
@@ -412,6 +415,7 @@ export function BarcodeScannerFlow({
       setPreview(result);
     } catch (error) {
       setPreviewError(error);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setPreviewing(false);
     }
@@ -427,9 +431,11 @@ export function BarcodeScannerFlow({
         preview.revision,
         confirmationKey.current,
       );
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onLogged();
     } catch (error) {
       setConfirmError(error);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setConfirming(false);
     }

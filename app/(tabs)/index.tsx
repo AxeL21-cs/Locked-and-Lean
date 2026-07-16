@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
@@ -21,7 +21,15 @@ import {
   mobileApi,
   type FoodEntry,
   type MealType,
+  type TodaySummary,
 } from "../../src/services/supabase";
+import { useSession } from "../../src/features/auth/SessionProvider";
+import {
+  cacheKeys,
+  getCache,
+  putCache,
+} from "../../src/features/offline/offlineStore";
+import { SyncStatusBanner } from "../../src/features/offline/SyncStatusBanner";
 
 const mealLabels: Record<MealType, string> = {
   breakfast: "Breakfast",
@@ -31,11 +39,40 @@ const mealLabels: Record<MealType, string> = {
 };
 export default function TodayScreen() {
   const router = useRouter();
+  const { session } = useSession();
+  const ownerId = session?.user.id;
   const client = useQueryClient();
   const [pendingDelete, setPendingDelete] = useState<FoodEntry | null>(null);
+  const [cachedSummary, setCachedSummary] = useState<TodaySummary>();
+  const [showingCached, setShowingCached] = useState(false);
+  const [cachedAt, setCachedAt] = useState<string>();
+  useEffect(() => {
+    if (ownerId)
+      void getCache<TodaySummary>(ownerId, cacheKeys.today).then((cached) => {
+        setCachedSummary(cached?.value);
+        setCachedAt(cached?.updatedAt);
+      });
+  }, [ownerId]);
   const query = useQuery({
-    queryKey: ["today"],
-    queryFn: () => mobileApi.getTodaySummary(),
+    queryKey: ["today", ownerId],
+    enabled: Boolean(ownerId),
+    queryFn: async () => {
+      try {
+        const value = await mobileApi.getTodaySummary();
+        await putCache(ownerId!, cacheKeys.today, value);
+        setCachedSummary(value);
+        setShowingCached(false);
+        return value;
+      } catch (error) {
+        const cached = await getCache<TodaySummary>(ownerId!, cacheKeys.today);
+        if (cached) {
+          setShowingCached(true);
+          setCachedAt(cached.updatedAt);
+          return cached.value;
+        }
+        throw error;
+      }
+    },
   });
   const remove = useMutation({
     mutationFn: (entryId: string) => mobileApi.deleteFoodEntry(entryId),
@@ -47,11 +84,7 @@ export default function TodayScreen() {
   if (query.isLoading)
     return (
       <Screen>
-        <AsyncStatePanel
-          kind="loading"
-          title="Opening today’s record"
-          message="Reading your confirmed entries and server-calculated summary."
-        />
+        <TodayLoadingState cached={cachedSummary} />
       </Screen>
     );
   if (query.error)
@@ -84,9 +117,18 @@ export default function TodayScreen() {
         </View>
         <View style={styles.live}>
           <Text style={styles.liveDot}>●</Text>
-          <Text style={styles.liveText}>CONFIRMED</Text>
+          <Text style={styles.liveText}>
+            {showingCached ? "SAVED COPY" : "CONFIRMED"}
+          </Text>
         </View>
       </View>
+      <SyncStatusBanner />
+      {showingCached ? (
+        <Text accessibilityRole="alert" style={styles.cachedNotice}>
+          Offline saved copy · last cached {cachedAt ?? summary.lastUpdatedAt}.
+          Refresh after reconnecting for current server records.
+        </Text>
+      ) : null}
       <View
         style={styles.energyCard}
         accessible
@@ -275,6 +317,54 @@ export default function TodayScreen() {
   );
 }
 
+function TodayLoadingState({ cached }: { cached?: TodaySummary }) {
+  const target = cached?.calorieTarget;
+  const consumed = cached?.caloriesConsumed ?? 0;
+  const remaining = target == null ? null : target - consumed;
+  return (
+    <View accessibilityLiveRegion="polite">
+      <Text style={styles.loadingEyebrow}>TODAY · RESTORING RECORD</Text>
+      <Text style={styles.loadingTitle}>
+        {remaining == null
+          ? "Your daily field log"
+          : `${Math.round(remaining).toLocaleString()} kcal left`}
+      </Text>
+      <Text style={styles.loadingCopy}>
+        {cached
+          ? "Showing saved totals while fresh records load."
+          : "Your target and macro rails will appear here. Confirmed entries are never guessed."}
+      </Text>
+      <View style={styles.loadingStats}>
+        <View style={styles.loadingStat}>
+          <Text style={styles.loadingValue}>{Math.round(consumed)}</Text>
+          <Text style={styles.loadingLabel}>CONSUMED</Text>
+        </View>
+        <View style={styles.loadingStat}>
+          <Text style={styles.loadingValue}>
+            {target == null ? "—" : Math.round(target)}
+          </Text>
+          <Text style={styles.loadingLabel}>DAILY LIMIT</Text>
+        </View>
+        <View style={styles.loadingStat}>
+          <Text style={styles.loadingValue}>
+            {cached ? Math.round(cached.proteinConsumedG) : "—"}
+          </Text>
+          <Text style={styles.loadingLabel}>PROTEIN G</Text>
+        </View>
+      </View>
+      <View
+        accessible
+        accessibilityLabel="Loading current records"
+        style={styles.skeleton}
+      >
+        <View style={styles.skeletonWide} />
+        <View style={styles.skeletonShort} />
+        <View style={styles.skeletonWide} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   masthead: {
     alignItems: "center",
@@ -445,5 +535,68 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: spacing.xl,
     marginTop: spacing.xl,
+  },
+  loadingEyebrow: {
+    color: colors.calamansiDeep,
+    fontFamily: type.label,
+    fontSize: 11,
+    letterSpacing: 1,
+    marginTop: spacing.xl,
+  },
+  loadingTitle: {
+    color: colors.ink,
+    fontFamily: type.display,
+    fontSize: 34,
+    marginTop: spacing.sm,
+  },
+  loadingCopy: {
+    color: colors.inkMuted,
+    fontFamily: type.body,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: spacing.xs,
+  },
+  loadingStats: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+  },
+  loadingStat: {
+    backgroundColor: colors.ink,
+    borderRadius: radius.md,
+    flex: 1,
+    minHeight: 88,
+    padding: spacing.md,
+  },
+  loadingValue: { color: colors.rice, fontFamily: type.numeric, fontSize: 22 },
+  loadingLabel: {
+    color: colors.calamansi,
+    fontFamily: type.label,
+    fontSize: 10,
+    marginTop: spacing.sm,
+  },
+  skeleton: { gap: spacing.md, marginTop: spacing.xl },
+  skeletonWide: {
+    backgroundColor: colors.riceDark,
+    borderRadius: radius.sm,
+    height: 68,
+    opacity: 0.65,
+  },
+  skeletonShort: {
+    backgroundColor: colors.riceDark,
+    borderRadius: radius.sm,
+    height: 20,
+    opacity: 0.45,
+    width: "55%",
+  },
+  cachedNotice: {
+    backgroundColor: colors.calamansiWash,
+    borderRadius: radius.md,
+    color: colors.inkMuted,
+    fontFamily: type.bodyStrong,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: spacing.md,
+    padding: spacing.md,
   },
 });

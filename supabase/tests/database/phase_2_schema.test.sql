@@ -150,8 +150,8 @@ select is(
     where n.nspname = 'private'
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  18,
-  'authenticated can execute only the reviewed Phase 2 through Phase 5 private bridge functions'
+  22,
+  'authenticated can execute only the reviewed private bridge functions through fast logging'
 );
 
 select ok(

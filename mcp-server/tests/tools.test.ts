@@ -6,6 +6,7 @@ import type {
   AccessTokenVerifier,
   VerifyAccessTokenRequest,
 } from "../src/auth/types.js";
+import { TokenVerificationError } from "../src/auth/types.js";
 import type { NutritionRepository } from "../src/repositories/types.js";
 import {
   executeTool,
@@ -51,12 +52,13 @@ function context(
       productionReady: false,
       blockers: ["hosted_oauth_and_mcp_inspector_unverified"],
     },
+    now: () => new Date("2026-07-16T03:00:00Z"),
   };
 }
 
 test("descriptors declare schemas, truthful annotations, and standard scopes", () => {
   const descriptors = toolDescriptors() as Array<Record<string, unknown>>;
-  assert.equal(descriptors.length, 10);
+  assert.equal(descriptors.length, 12);
   for (const descriptor of descriptors) {
     assert.equal((descriptor.inputSchema as { type: string }).type, "object");
     assert.equal((descriptor.outputSchema as { type: string }).type, "object");
@@ -73,6 +75,120 @@ test("descriptors declare schemas, truthful annotations, and standard scopes", (
   assert.deepEqual(preview.securitySchemes, [
     { type: "oauth2", scopes: ["openid"] },
   ]);
+});
+
+test("today calories uses the current Manila date and server-owned total", async () => {
+  let captured: Record<string, unknown> | undefined;
+  const result = await executeTool(
+    "get_today_calories",
+    {},
+    context({
+      repository: {
+        configured: true,
+        invoke: async (invocation) => {
+          captured = invocation.params;
+          return [
+            {
+              local_date: "2026-07-16",
+              consumed_calories: "1450.5",
+              calorie_target: "2000",
+              entry_count: 3,
+            },
+          ];
+        },
+      },
+    }),
+  );
+  assert.deepEqual(captured, {
+    p_start_date: "2026-07-16",
+    p_end_date: "2026-07-16",
+  });
+  assert.deepEqual(result.structuredContent, {
+    local_date: "2026-07-16",
+    consumed_calories: 1450.5,
+    calorie_target: 2000,
+    calories_remaining: 549.5,
+    entry_count: 3,
+    manila_time_zone: "Asia/Manila",
+  });
+});
+
+test("weekly protein averages seven Manila calendar days when macros are complete", async () => {
+  let captured: Record<string, unknown> | undefined;
+  const result = await executeTool(
+    "get_weekly_protein_average",
+    {},
+    context({
+      repository: {
+        configured: true,
+        invoke: async (invocation) => {
+          captured = invocation.params;
+          return Array.from({ length: 7 }, (_, index) => ({
+            local_date: `2026-07-${String(10 + index).padStart(2, "0")}`,
+            consumed_protein_g: 70,
+            macro_data_complete: true,
+            entry_count: index === 0 ? 0 : 2,
+          }));
+        },
+      },
+    }),
+  );
+  assert.deepEqual(captured, {
+    p_start_date: "2026-07-10",
+    p_end_date: "2026-07-16",
+  });
+  assert.deepEqual(result.structuredContent, {
+    start_date: "2026-07-10",
+    end_date: "2026-07-16",
+    calendar_day_count: 7,
+    days_with_entries: 6,
+    total_protein_g: 490,
+    average_daily_protein_g: 70,
+    macro_data_complete: true,
+    incomplete_dates: [],
+    manila_time_zone: "Asia/Manila",
+  });
+});
+
+test("weekly protein refuses to invent an average when a macro day is incomplete", async () => {
+  const result = await executeTool(
+    "get_weekly_protein_average",
+    {},
+    context({
+      repository: {
+        configured: true,
+        invoke: async () =>
+          Array.from({ length: 7 }, (_, index) => ({
+            local_date: `2026-07-${String(10 + index).padStart(2, "0")}`,
+            consumed_protein_g: index === 3 ? null : 70,
+            macro_data_complete: index !== 3,
+            entry_count: 1,
+          })),
+      },
+    }),
+  );
+  assert.equal(result.structuredContent?.average_daily_protein_g, null);
+  assert.deepEqual(result.structuredContent?.incomplete_dates, ["2026-07-13"]);
+});
+
+test("unapproved OAuth client fails closed without prompting a futile reconnect", async () => {
+  const result = await executeTool(
+    "get_today_calories",
+    {},
+    context({
+      verifier: {
+        configured: true,
+        verify: async () => {
+          throw new TokenVerificationError("client_action_denied", "denied");
+        },
+      },
+    }),
+  );
+  assert.equal(result.isError, true);
+  assert.deepEqual(result.structuredContent, {
+    code: "oauth_client_not_approved",
+  });
+  assert.equal(result._meta, undefined);
 });
 
 test("configured but externally blocked health is degraded", async () => {

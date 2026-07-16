@@ -17,6 +17,37 @@ MCP tool without acceptable authorization returns an error result containing
 `_meta["mcp/www_authenticate"]`. Challenges point to the protected-resource
 metadata URL and do not include tokens or backend error bodies.
 
+An expired/rejected access token still receives an authentication challenge so
+ChatGPT can refresh or reauthorize. By contrast, an exact client-policy denial
+or a repository `403` returns a stable authorization error without
+`mcp/www_authenticate`: reconnecting cannot change a server-owned allowlist, and
+challenging those responses creates a misleading reconnect loop.
+
+## Session persistence and client reuse
+
+The hosted authorization-server discovery currently advertises authorization
+code, refresh-token, PKCE S256, public/confidential token authentication, and a
+dynamic registration endpoint. The protected-resource document points to the
+same exact issuer and canonical resource. Supabase's OAuth refresh flow rotates
+refresh tokens, so clients must store the replacement returned by each refresh.
+
+The custom access-token hook reads the OAuth `client_id` from either the hook
+event or its claims. Supabase documents `client_id` as an OAuth access-token
+claim and `token_refresh` as a hook authentication method, so the hook is
+structured to preserve the MCP audience on refresh. A live refresh-token round
+trip remains required before this can be marked verified; no real refresh token
+is stored in the repository or test fixtures.
+
+Dynamic registration creates a client ID that must be reused for that connector
+instance. Because both the MCP runtime and database are default-deny by exact
+client ID, a newly registered ID is not usable until an administrator approves
+that same ID in both `MCP_ALLOWED_CLIENT_ACTIONS` and
+`private.oauth_client_action_policies`. Recreating the connector can create a
+new DCR client and repeat that approval problem. For a controlled personal
+deployment, a predefined stable OAuth client configured in ChatGPT and approved
+before linking avoids that DCR bootstrap cycle. Do not broadly approve every
+dynamically registered client.
+
 ## Token verification
 
 `JwtAccessTokenVerifier` verifies every protected request using the issuer's

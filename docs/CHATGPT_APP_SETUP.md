@@ -56,4 +56,25 @@ Until then, the mandatory health blockers
 `supabase_custom_application_scopes_unavailable` and
 `hosted_oauth_and_mcp_inspector_unverified` are truthful and intentional.
 
+## Avoiding repeated reconnects
+
+Use one stable connector registration. The preferred controlled setup is a
+predefined OAuth client whose exact ID is approved in the MCP environment and
+database policy before the user links it. If DCR is used instead, capture and
+approve the client ID created for that connector instance, then keep that
+instance rather than deleting and recreating it.
+
+After linking, verify a protected read immediately, wait past one access-token
+lifetime, and verify it again. The second call must succeed through refresh and
+must produce an access token with the same `client_id` and canonical MCP `aud`.
+A `401` should trigger refresh/re-authentication; a policy `403` should not ask
+the user to reconnect. Never place either token in screenshots, logs, docs, or
+test fixtures.
+
+The server now exposes two focused read-only tools for the initial safe stage:
+`get_today_calories` and `get_weekly_protein_average`. The latter returns no
+numeric average when any of the seven Manila days has incomplete macro data.
+Food-writing tools remain blocked until the preview/revision/confirmation path
+is end-to-end compatible and verified.
+
 Reference: [Build an MCP server](https://developers.openai.com/apps-sdk/build/mcp-server).

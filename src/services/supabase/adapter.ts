@@ -346,7 +346,7 @@ export const mobileApi: MobileApi = {
           );
         return { kind: "redirect", redirectUrl: data.redirect_url };
       }
-      if (data.authorization_id.toLowerCase() !== normalizedId)
+      if (data.authorization_id !== normalizedId)
         throw new MobileApiError(
           "The OAuth server returned a different authorization request.",
           "validation",

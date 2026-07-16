@@ -103,6 +103,61 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     status: { invoking: "Checking health…", invoked: "Health checked" },
   },
   {
+    name: "get_today_calories",
+    title: "Read today's calorie status",
+    description:
+      "Reads the authenticated user's server-calculated calorie total and active target for the current Asia/Manila calendar day. It never changes history.",
+    action: "get_calendar_history",
+    inputSchema: z.object({}).strict(),
+    outputSchema: z.object({
+      local_date: dateSchema,
+      consumed_calories: z.number().nonnegative(),
+      calorie_target: z.number().nullable(),
+      calories_remaining: z.number().nullable(),
+      entry_count: z.number().int().nonnegative(),
+      manila_time_zone: z.literal("Asia/Manila"),
+    }),
+    securitySchemes: protectedSchemes,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+    },
+    status: {
+      invoking: "Reading today's calories…",
+      invoked: "Calories ready",
+    },
+  },
+  {
+    name: "get_weekly_protein_average",
+    title: "Read seven-day protein average",
+    description:
+      "Reads the current Asia/Manila day and six preceding calendar days, then returns a daily protein average only when macro data is complete for all seven days. It never changes history.",
+    action: "get_calendar_history",
+    inputSchema: z.object({}).strict(),
+    outputSchema: z.object({
+      start_date: dateSchema,
+      end_date: dateSchema,
+      calendar_day_count: z.literal(7),
+      days_with_entries: z.number().int().min(0).max(7),
+      total_protein_g: z.number().nonnegative().nullable(),
+      average_daily_protein_g: z.number().nonnegative().nullable(),
+      macro_data_complete: z.boolean(),
+      incomplete_dates: z.array(dateSchema),
+      manila_time_zone: z.literal("Asia/Manila"),
+    }),
+    securitySchemes: protectedSchemes,
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+    },
+    status: {
+      invoking: "Reading weekly protein…",
+      invoked: "Protein average ready",
+    },
+  },
+  {
     name: "get_calendar_history",
     title: "Read calorie and macro calendar",
     description:

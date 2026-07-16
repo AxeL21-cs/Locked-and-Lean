@@ -7,8 +7,10 @@ export const STANDARD_OAUTH_SCOPES = [
 
 export type StandardOAuthScope = (typeof STANDARD_OAUTH_SCOPES)[number];
 
-const AUTHORIZATION_ID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Supabase OAuth authorization handles are opaque URL-safe identifiers. Hosted
+// projects currently issue compact base32 values rather than UUIDs, so validate
+// only their transport-safe shape and let Auth resolve the exact handle.
+const AUTHORIZATION_ID = /^[A-Za-z0-9_-]{16,128}$/;
 
 export function normalizeAuthorizationId(value: unknown): string | undefined {
   if (Array.isArray(value)) {
@@ -17,7 +19,7 @@ export function normalizeAuthorizationId(value: unknown): string | undefined {
   }
   if (typeof value !== "string" || !AUTHORIZATION_ID.test(value))
     return undefined;
-  return value.toLowerCase();
+  return value;
 }
 
 export function oauthConsentRoute(value: unknown) {

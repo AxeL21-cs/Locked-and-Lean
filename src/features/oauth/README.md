@@ -15,7 +15,7 @@ No secret or service-role key belongs in Expo public configuration.
 
 ## Flow and boundaries
 
-- Only one strict UUID `authorization_id` is accepted. It is the sole value preserved through sign-in; arbitrary return URLs and registration detours are not accepted.
+- Only one bounded, URL-safe opaque `authorization_id` is accepted and it is preserved exactly. Supabase Auth resolves the handle before any consent is shown; arbitrary return URLs and registration detours are not accepted.
 - The adapter calls `auth.getUser()` before reading consent details and again before approve/deny, then verifies that the server request belongs to that user.
 - Client identity, email, requested scopes, and registered redirect destination come from `getAuthorizationDetails`.
 - Only Supabase's current standard identity scopes (`openid`, `email`, `profile`, `phone`) are displayed as supported. Any custom scope blocks approval.

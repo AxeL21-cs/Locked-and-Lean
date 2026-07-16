@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/mcp", "destination": "/api/mcp" },
+    { "source": "/healthz", "destination": "/api/healthz" },
+    {
+      "source": "/.well-known/oauth-protected-resource",
+      "destination": "/api/oauth-protected-resource"
+    }
+  ],
+  "functions": {
+    "api/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

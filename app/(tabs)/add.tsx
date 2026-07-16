@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { StyleSheet, Text } from "react-native";
 
 import { AddActionList } from "../../src/features/add/AddActionList";
+import { QuickLogPanel } from "../../src/features/add/QuickLogPanel";
 import { Screen } from "../../src/components/Screen";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import {
@@ -30,6 +31,7 @@ export default function AddScreen() {
       <Text style={styles.notice} accessibilityLiveRegion="polite">
         {notice}
       </Text>
+      <QuickLogPanel />
       <AddActionList
         onSelect={(action) => {
           if (action.label === "Manual Food Entry")

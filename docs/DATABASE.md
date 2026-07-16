@@ -4,7 +4,7 @@ Status: Phase 5 Calendar/Progress backend implemented and verified locally; host
 
 ## Source of truth
 
-The tested Phase 2 baseline is `supabase/migrations/20260712133713_phase_2_core_schema.sql`. Phase 3 is the additive `supabase/migrations/20260712230402_phase_3_core_backend.sql`; Phase 4 adds `supabase/migrations/20260712234027_phase_4_barcode_backend.sql`; Phase 5 adds `supabase/migrations/20260713000921_phase_5_calendar_progress.sql`. The additive migrations were created with pinned Supabase CLI 2.109.1. Migrations, not this document, are authoritative.
+The tested Phase 2 baseline is `supabase/migrations/20260712133713_phase_2_core_schema.sql`. Phase 3 is the additive `supabase/migrations/20260712230402_phase_3_core_backend.sql`; Phase 4 adds `supabase/migrations/20260712234027_phase_4_barcode_backend.sql`; Phase 5 adds `supabase/migrations/20260713000921_phase_5_calendar_progress.sql`. Fast logging and offline receipts are added by `supabase/migrations/20260716091125_fast_logging_offline_sync.sql`. The additive migrations were created with pinned Supabase CLI 2.109.1. Migrations, not this document, are authoritative.
 
 The database follows the product rule **interpret first, verify second, log third**. Preview tables are temporary workflow state. `food_entries` and `food_entry_items` are permanent history and cannot be inserted directly by `authenticated` or `anon`.
 
@@ -135,6 +135,13 @@ Confirmed history remains immutable. `copy_food_entry_to_preview(entry_id, meal_
 
 Both commands are first-party-only. The source relationship uses an owner-composite foreign key. Existing `delete_food_entry` still requires explicit true, soft-deletes under an owner lock, and transactionally recalculates derived summaries. Calendar/Progress reads independently exclude every soft-deleted entry.
 
+## Fast logging and offline synchronization
+
+- `saved_meals` stores owner-private immutable item snapshots copied only from confirmed active history. A stable client operation UUID makes creation idempotent. Favorites are a saved-meal preference, not a nutrition claim.
+- `get_quick_log_suggestions` derives recent portions from the owner's last 90 days of confirmed active item snapshots. It returns the last observed serving, meal context, frequency, source entry/time, and an explicit confirmed-history provenance message.
+- `create_saved_meal_preview` and `create_repeat_meal_preview` turn a saved snapshot or a selected prior Manila meal into a new complete presented preview. Reused items include `historical_portion_reuse` uncertainty. Historical rice weight or plate size is context to review, never an assertion that today's portion is identical.
+  Offline clients keep the exact draft payload and stable confirmation idempotency key in their local queue. On reconnect they call `create_manual_food_log_preview`, compare the complete returned server revision to the locally presented revision, and only then call `confirm_food_log` with that stable key. A mismatch must return to preview instead of writing. UI states such as `waiting_to_sync`, `syncing`, and `failed` remain local client state; the server entry is authoritative only after canonical confirmation returns successfully.
+
 ## Data retention and deletion blocker
 
 User-owned database rows generally cascade from `auth.users`, but Storage objects do not participate in those foreign keys. Account export/deletion and storage-prefix cleanup are **not implemented**. Production release must remain blocked until an idempotent workflow covers recent authentication, session revocation, write freeze, export, private object deletion, database cleanup, Auth deletion, device-cache clearing, retries, reconciliation, and approved backup/audit retention.
@@ -146,3 +153,5 @@ Do not present database cascades alone as account deletion.
 The seven pgTAP suites in `supabase/tests/database` pass 281/281 assertions after a zero-state local reset. The 59 backend Phase 5 assertions add UTC+8 midnight boundaries, legacy stored-date drift, empty/incomplete days, snapshot provenance, sparse weights, progress averages, target resolution, copy preview-only behavior, replacement confirmation, soft-delete recalculation, cross-user isolation, OAuth default deny, RLS, and function ACL checks. The independent 32-assertion QA suite adds New Year rollover, catalog drift versus immutable snapshots, confirmation retry behavior, deletion/progress recalculation, and separate ACL checks. Local DB lint and security/performance advisors report no issues.
 
 Hosted drift, true concurrent confirmation, forced rollback, adversarial Storage bytes/ownership, and production retention remain release work.
+
+The dedicated fast-logging suite passes 20/20 assertions after a zero-state reset. The Phase 2 schema, Phase 5 Calendar/Progress, and fast-logging ACL/regression subset passes 111/111 assertions, and local DB lint reports no schema warnings. The unrelated complete-suite run still exposes the pre-existing Phase 3 date-fixture ordering failure when all files share one invocation; this migration is not deployed to hosted state.

@@ -11,6 +11,7 @@
     "src/repositories/**/*.ts",
     "src/tools/**/*.ts",
     "src/app.ts",
+    "src/runtime.ts",
     "src/server.ts"
   ],
   "exclude": ["tests/**/*.ts"]

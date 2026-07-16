@@ -3,11 +3,11 @@
 Locked and Lean is a production-minded calorie, macro, body-weight, target, and
 history tracker designed for users in the Philippines.
 
-> **Current status: Phases 1-5 complete locally; Phase 6 local MCP/OAuth
-> scaffold complete but production-blocked.** The mobile app and local
+> **Current status: Phases 1-5 complete; Phase 6 MCP/OAuth endpoints are
+> hosted but the account-owner connection remains production-blocked.** The mobile app and
 > Supabase stack support authenticated, preview-confirm food logging, barcode
-> review, history, targets, and weight/progress. Hosted OAuth, live providers,
-> physical-device evidence, and production deployment are not complete.
+> review, history, targets, and weight/progress. Granular OAuth authorization,
+> live providers, physical-device evidence, and production hardening are not complete.
 
 The governing rule is **interpret first, verify second, log third**. A food
 candidate must have a complete current preview, including uncertainty, and the
@@ -16,12 +16,12 @@ allowed.
 
 ## Capability status
 
-| Status                  | Current scope                                                                                                                                                                                                                                                                |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Implemented locally** | Auth/onboarding, targets, encrypted native sessions, manual and barcode preview-confirm logging, saved foods, Today mutations, weight logging, Manila-safe Calendar, accessible Progress trends, RLS, transactional/idempotent writes, and a fail-closed MCP/OAuth scaffold. |
-| **Mocked / fixtures**   | Barcode catalog records and security/provider test data are explicitly synthetic and blocked from production use. No fixture is represented as a live provider result.                                                                                                       |
-| **Blocked**             | Granular production MCP authorization, OAuth-compatible general preview/revision RPCs, licensed/live Philippine provider data, hosted ChatGPT/MCP Inspector E2E, and physical-device/release evidence.                                                                       |
-| **Production-ready**    | Not yet. Release requires every item in the [production checklist](docs/PRODUCTION_CHECKLIST.md) to pass with hosted and device evidence.                                                                                                                                    |
+| Status                | Current scope                                                                                                                                                                                                                                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Implemented**       | Auth/onboarding, targets, encrypted native sessions, manual and barcode preview-confirm logging, saved foods, Today mutations, weight logging, Manila-safe Calendar, accessible Progress trends, RLS, transactional/idempotent writes, hosted Expo consent and MCP endpoints, and a fail-closed OAuth client/action policy. |
+| **Mocked / fixtures** | Barcode catalog records and security/provider test data are explicitly synthetic and blocked from production use. No fixture is represented as a live provider result.                                                                                                                                                      |
+| **Blocked**           | Granular production MCP authorization, OAuth-compatible general preview/revision RPCs, licensed/live Philippine provider data, hosted ChatGPT/MCP Inspector E2E, and physical-device/release evidence.                                                                                                                      |
+| **Production-ready**  | Not yet. Release requires every item in the [production checklist](docs/PRODUCTION_CHECKLIST.md) to pass with hosted and device evidence.                                                                                                                                                                                   |
 
 ## Run the app locally
 
@@ -104,9 +104,9 @@ Architecture and data movement are documented in
 
 ## Current production blockers
 
-- No owner-configured hosted Supabase project, production OAuth client, MCP
-  HTTPS resource, JWKS, live provider credentials, or deployment target is
-  present.
+- The hosted Supabase project, HTTPS MCP resource, JWKS verification, Expo web
+  consent route, and Vercel deployment targets are configured. Real ChatGPT
+  registration and the final account-owner OAuth settings are not yet verified.
 - Supabase OAuth supports identity scopes but not custom application scopes
   such as `food:write`; general production ChatGPT writes remain blocked by
   [ADR-0001](docs/DECISIONS/0001-supabase-oauth-custom-scopes.md).

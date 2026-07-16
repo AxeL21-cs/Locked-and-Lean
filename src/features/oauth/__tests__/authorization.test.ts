@@ -8,10 +8,10 @@ import {
 } from "../authorization";
 
 describe("OAuth authorization parameter safety", () => {
-  const id = "8b3f66de-1968-4b38-80df-ccf1d524e7bb";
+  const id = "psjtkmmcim2qcyix6bmvk6jvzikhckbw";
 
-  it("accepts only one strict UUID authorization_id", () => {
-    expect(normalizeAuthorizationId(id.toUpperCase())).toBe(id);
+  it("accepts one URL-safe opaque authorization_id without rewriting it", () => {
+    expect(normalizeAuthorizationId(id.toUpperCase())).toBe(id.toUpperCase());
     expect(normalizeAuthorizationId([id])).toBe(id);
     expect(normalizeAuthorizationId([id, id])).toBeUndefined();
     expect(
@@ -21,6 +21,7 @@ describe("OAuth authorization parameter safety", () => {
       normalizeAuthorizationId(`${id}?return=https://evil.example`),
     ).toBeUndefined();
     expect(normalizeAuthorizationId(` ${id}`)).toBeUndefined();
+    expect(normalizeAuthorizationId("short-id")).toBeUndefined();
   });
 
   it("builds only fixed login and consent routes from a validated ID", () => {

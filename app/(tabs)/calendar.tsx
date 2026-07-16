@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 
 import { AsyncStatePanel } from "../../src/components/AsyncStatePanel";
@@ -23,7 +24,18 @@ import type {
   HistoryViewMode,
 } from "../../src/features/calendar/types";
 import { calendarDayView } from "../../src/features/calendar/viewModel";
-import { mobileApi, type HistoryDayEntry } from "../../src/services/supabase";
+import {
+  mobileApi,
+  type CalendarHistoryDay,
+  type DayHistory,
+  type HistoryDayEntry,
+} from "../../src/services/supabase";
+import { useSession } from "../../src/features/auth/SessionProvider";
+import {
+  cacheKeys,
+  getCache,
+  putCache,
+} from "../../src/features/offline/offlineStore";
 
 const TODAY = () => localDateInManila(new Date());
 
@@ -66,11 +78,18 @@ const actionGateway: HistoryActionGateway = {
 };
 
 export default function CalendarScreen() {
+  const params = useLocalSearchParams<{ date?: string }>();
+  const { session } = useSession();
+  const ownerId = session?.user.id;
   const queryClient = useQueryClient();
   const today = TODAY();
+  const initialDate =
+    params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
+      ? params.date
+      : today;
   const [mode, setMode] = useState<HistoryViewMode>("month");
-  const [anchorDate, setAnchorDate] = useState(today);
-  const [selectedDate, setSelectedDate] = useState(today);
+  const [anchorDate, setAnchorDate] = useState(initialDate);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [historyAction, setHistoryAction] = useState<{
     action: "copy" | "edit";
     entry: HistoryEntryView;
@@ -94,7 +113,22 @@ export default function CalendarScreen() {
   const calendarQuery = useQuery({
     queryKey: ["calendar-history", startDate, endDate],
     queryFn: async () => {
-      const snapshots = await mobileApi.getCalendarHistory(startDate, endDate);
+      let snapshots: CalendarHistoryDay[];
+      try {
+        snapshots = await mobileApi.getCalendarHistory(startDate, endDate);
+        await putCache(
+          ownerId!,
+          cacheKeys.calendar(startDate, endDate),
+          snapshots,
+        );
+      } catch (error) {
+        const cached = await getCache<CalendarHistoryDay[]>(
+          ownerId!,
+          cacheKeys.calendar(startDate, endDate),
+        );
+        if (!cached) throw error;
+        snapshots = cached.value;
+      }
       const byDate = new Map(
         snapshots.map((snapshot) => [snapshot.localDate, snapshot]),
       );
@@ -110,7 +144,20 @@ export default function CalendarScreen() {
   });
   const dayQuery = useQuery({
     queryKey: ["day-history", selectedDate],
-    queryFn: () => mobileApi.getDayHistory(selectedDate),
+    queryFn: async () => {
+      try {
+        const value = await mobileApi.getDayHistory(selectedDate);
+        await putCache(ownerId!, cacheKeys.day(selectedDate), value);
+        return value;
+      } catch (error) {
+        const cached = await getCache<DayHistory>(
+          ownerId!,
+          cacheKeys.day(selectedDate),
+        );
+        if (cached) return cached.value;
+        throw error;
+      }
+    },
   });
   const remove = useMutation({
     mutationFn: (entry: HistoryEntryView) =>

@@ -173,7 +173,8 @@ export function createHttpHandler(
       // SDK 1.29's transport declarations predate exactOptionalPropertyTypes;
       // the runtime object implements the same MCP Transport interface.
       await server.connect(transport as Parameters<Server["connect"]>[0]);
-      await transport.handleRequest(request, response);
+      const parsedBody = (request as IncomingMessage & { body?: unknown }).body;
+      await transport.handleRequest(request, response, parsedBody);
     } catch {
       if (!response.headersSent) {
         json(response, 500, {

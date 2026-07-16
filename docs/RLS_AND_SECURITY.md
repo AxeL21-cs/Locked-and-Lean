@@ -10,7 +10,7 @@ The mobile app and MCP server must use a publishable key plus the signed-in user
 
 ## Data API grants
 
-The migration explicitly grants `authenticated` only `SELECT` on Phase 2 application tables. This is required for Supabase projects where new public tables are no longer exposed automatically. `anon` receives no application table access. Grants determine whether the Data API can reach an object; RLS separately determines which rows are visible.
+The migrations explicitly grant `authenticated` only `SELECT` on application tables, including `saved_meals`. This is required for Supabase projects where new public tables are no longer exposed automatically. `anon` receives no application table access. Grants determine whether the Data API can reach an object; RLS separately determines which rows are visible.
 
 There are no authenticated direct `INSERT`, `UPDATE`, or `DELETE` grants on permanent food history, idempotency, audit, target, weight, preview, saved-food, provider-serving, or summary tables. Phase 3/4 mutations are available only through the reviewed RPC signatures.
 
@@ -24,6 +24,7 @@ Every application table in `public` has RLS enabled.
 - Restaurant catalog tables are readable to authenticated users.
 - Product serving options are readable only when the parent is shared or owned; provider/serving ingestion remains server-only.
 - Preview revisions/items, entries/items, weights, summaries, idempotency rows, and audit rows are owner-only.
+- Saved meal snapshots are owner-only and have no direct mobile write grant.
 - Child tables repeat `user_id` and use owner-composite foreign keys so a child cannot be attached to another user's parent.
 
 No policy authorizes from `user_metadata`, a request body `user_id`, or client-computed nutrition totals.
@@ -50,9 +51,9 @@ Phase 5 history reads use the same default-deny principle. First-party sessions 
 
 Privileged helpers are in the non-exposed `private` schema, use `SECURITY DEFINER` only where direct table writes require it, set `search_path = ''`, fully qualify database objects, re-derive `auth.uid()`, and re-check caller policy.
 
-Public wrappers are `SECURITY INVOKER`. Because an invoker wrapper must call its private bridge, `authenticated` has `USAGE` on `private` and execute on exactly eighteen reviewed private bridge signatures: the Phase 4 set plus Calendar, day history, weight trend, progress summary, copy preview, and edit preview. Direct Data API exposure remains limited to `public`; GTIN/date validators, ranking/warning helpers, snapshot JSON helpers, replacement triggers, and the retained Phase 2 confirmation core are not granted.
+Public wrappers are `SECURITY INVOKER`. Because an invoker wrapper must call its private bridge, `authenticated` has `USAGE` on `private` and execute on exactly twenty-two reviewed private bridge signatures: the prior eighteen plus save-meal, favorite-toggle, saved-meal-preview, and repeat-meal-preview. Direct Data API exposure remains limited to `public`; reuse-snapshot builders, GTIN/date validators, ranking/warning helpers, snapshot JSON helpers, replacement triggers, and the retained Phase 2 confirmation core are not granted.
 
-Each additive migration repeats the blanket execute revocation after creating its functions, then grants only the eighteen reviewed public/private bridge pairs. The role-global default privilege revoke remains in force so future functions do not inherit `PUBLIC` execute. Deployment checks must inspect `pg_default_acl`, `pg_proc.proacl`, `prosecdef`, and `proconfig` to detect drift.
+Earlier additive migrations repeat the blanket execute revocation after creating functions. The fast-logging migration revokes only its new signatures so it cannot disturb earlier reviewed RPCs, then grants its four reviewed public/private bridge pairs and the public suggestions read. The role-global default privilege revoke remains in force so future functions do not inherit `PUBLIC` execute. Deployment checks must inspect `pg_default_acl`, `pg_proc.proacl`, `prosecdef`, and `proconfig` to detect drift.
 
 ## Calendar/history boundary
 
@@ -75,6 +76,10 @@ Confirmation locks the owner-scoped idempotency row before deciding whether to c
 Audit rows contain subject ownership, client ID, action, outcome, object IDs, and idempotency outcome. They must not contain bearer tokens, headers, transcripts, or meal descriptions. Retention and abuse-rate controls remain to be approved and implemented.
 
 Weight keys are unique per owner and bound to the timestamp, timezone, derived local date, and weight; conflicting reuse fails. Deletion is owner-scoped, requires explicit true, is soft/idempotent, and relies on the entry trigger to rebuild the affected daily summary transactionally. Saved foods are owner-private under the existing product RLS policy. Calories-only items retain nullable macros and an explicit completeness flag through preview, history, and summaries.
+
+Offline replay deliberately has no one-call permanent-write shortcut. On reconnect the client creates a server preview, deep-compares the returned current revision with the exact locally presented payload, and calls canonical confirmation only after equality succeeds. A mismatch returns to review. The stable queued idempotency key is bound by `confirm_food_log` to preview, revision, and explicit confirmation, so response loss cannot duplicate a permanent entry. Client aggregate totals and client `user_id` are not accepted.
+
+Saved meals and repeat suggestions are immutable historical observations. They carry source entry/time and `historical_portion_reuse` uncertainty into every new preview. They never silently write history and never claim that a usual home plate or rice portion is unchanged today.
 
 ## Storage boundary
 

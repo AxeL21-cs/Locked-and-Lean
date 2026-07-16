@@ -1,9 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import * as Haptics from "expo-haptics";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  BackHandler,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { z } from "zod";
 
 import { ActionButton } from "../../components/ActionButton";
@@ -19,6 +28,16 @@ import {
   type MealType,
 } from "../../services/supabase";
 import { zodResolver } from "../forms/zodResolver";
+import { useSession } from "../auth/SessionProvider";
+import {
+  buildLocalManualPreview,
+  enqueueConfirmation,
+  enqueueManualConfirmation,
+  isConnectivityError,
+  putCache,
+  rememberFoodContext,
+  removeQueuedManualConfirmation,
+} from "../offline/offlineStore";
 import { ManualPreviewCard } from "./ManualPreviewCard";
 
 const today = () => localDateInManila(new Date());
@@ -79,59 +98,134 @@ export function ManualEntryFlow() {
     name?: string;
     barcode?: string;
     calories?: string;
+    proteinG?: string;
+    carbohydratesG?: string;
+    fatG?: string;
+    quantity?: string;
+    unit?: string;
+    brand?: string;
     meal?: MealType;
     copy?: string;
+    context?: string;
+    reviewKey?: string;
   }>();
+  const { session } = useSession();
   const queryClient = useQueryClient();
   const [confirmationKey, setConfirmationKey] = useState(idempotencyKey);
+  const [offlineNotice, setOfflineNotice] = useState<string>();
+  const [offlinePreview, setOfflinePreview] =
+    useState<ReturnType<typeof buildLocalManualPreview>>();
+  const [latestInput, setLatestInput] = useState<ManualFoodInput>();
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       foodName: params.name ?? "",
-      brand: "",
+      brand: params.brand ?? "",
       barcode: params.barcode ?? "",
-      servingUnit: "serving",
-      quantity: "1",
+      servingUnit: params.unit ?? "serving",
+      quantity: params.quantity ?? "1",
       calories: params.calories ?? "",
-      proteinG: "",
-      carbohydratesG: "",
-      fatG: "",
+      proteinG: params.proteinG ?? "",
+      carbohydratesG: params.carbohydratesG ?? "",
+      fatG: params.fatG ?? "",
       mealType: params.meal ?? "snack",
       consumedDate: today(),
       consumedTime: nowTime(),
       saveForReuse: false,
     },
   });
+
   const preview = useMutation({
     mutationFn: (input: ManualFoodInput) =>
       mobileApi.createManualFoodPreview(input),
   });
+  useEffect(() => {
+    if (
+      Platform.OS !== "android" ||
+      (!isDirty && !preview.data && !offlinePreview)
+    )
+      return;
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        Alert.alert(
+          "Discard this food draft?",
+          "Your unconfirmed changes will be lost.",
+          [
+            { text: "Keep editing", style: "cancel" },
+            {
+              text: "Discard",
+              style: "destructive",
+              onPress: () => router.back(),
+            },
+          ],
+        );
+        return true;
+      },
+    );
+    return () => subscription.remove();
+  }, [isDirty, offlinePreview, preview.data, router]);
   const confirm = useMutation({
-    mutationFn: async () => {
-      if (!preview.data || !preview.variables)
+    mutationFn: async (): Promise<{ queued: boolean }> => {
+      const currentPreview = preview.data ?? offlinePreview;
+      const currentInput = preview.variables ?? latestInput;
+      if (!currentPreview || !currentInput)
         throw new Error("Create a current preview first.");
-      const result = await mobileApi.confirmFoodPreview(
-        preview.data.id,
-        preview.data.revision,
-        confirmationKey,
-      );
-      if (preview.variables.saveForReuse)
-        await mobileApi.saveFoodForReuse(preview.variables);
-      return result;
+      if (offlinePreview) {
+        if (!session?.user.id)
+          throw new Error("Sign in before storing an offline confirmation.");
+        await enqueueManualConfirmation({
+          ownerId: session.user.id,
+          input: currentInput,
+          localPreview: offlinePreview,
+          idempotencyKey: confirmationKey,
+        });
+        return { queued: true };
+      }
+      try {
+        await mobileApi.confirmFoodPreview(
+          currentPreview.id,
+          currentPreview.revision,
+          confirmationKey,
+        );
+        if (currentInput.saveForReuse)
+          await mobileApi.saveFoodForReuse(currentInput);
+        return { queued: false };
+      } catch (error) {
+        if (!session?.user.id || !isConnectivityError(error)) throw error;
+        await enqueueConfirmation({
+          ownerId: session.user.id,
+          preview: currentPreview,
+          idempotencyKey: confirmationKey,
+        });
+        return { queued: true };
+      }
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      const contextInput = preview.variables ?? latestInput;
+      if (session?.user.id && contextInput && !result.queued)
+        await rememberFoodContext(session.user.id, contextInput);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (params.reviewKey && !result.queued)
+        await removeQueuedManualConfirmation(params.reviewKey);
       await queryClient.invalidateQueries({ queryKey: ["today"] });
-      router.replace("/" as Href);
+      router.replace({
+        pathname: "/",
+        params: result.queued ? { sync: "waiting" } : {},
+      } as unknown as Href);
     },
+    onError: () =>
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
   });
 
   const submit = (values: Values) => {
-    setConfirmationKey(idempotencyKey());
-    preview.mutate({
+    const nextConfirmationKey = idempotencyKey();
+    setConfirmationKey(nextConfirmationKey);
+    const input: ManualFoodInput = {
       foodName: values.foodName.trim(),
       brand: values.brand || undefined,
       barcode: values.barcode || undefined,
@@ -145,21 +239,41 @@ export function ManualEntryFlow() {
       consumedDate: values.consumedDate,
       consumedTime: values.consumedTime,
       saveForReuse: values.saveForReuse,
+    };
+    setLatestInput(input);
+    setOfflinePreview(undefined);
+    setOfflineNotice(undefined);
+    preview.mutate(input, {
+      onError: async (error) => {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        if (session?.user.id && isConnectivityError(error)) {
+          await putCache(session.user.id, "draft:manual", input);
+          setOfflinePreview(
+            buildLocalManualPreview(input, nextConfirmationKey),
+          );
+          setOfflineNotice(
+            "On-device preview created from exactly what you entered. Confirming queues it; the server compares its own preview before anything can be logged.",
+          );
+        }
+      },
     });
   };
 
-  if (preview.data)
+  const currentPreview = preview.data ?? offlinePreview;
+  if (currentPreview)
     return (
       <Screen>
         <ManualPreviewCard
           confirming={confirm.isPending}
           error={confirm.error?.message}
+          localOnly={Boolean(offlinePreview)}
           onConfirm={() => confirm.mutate()}
           onEdit={() => {
             confirm.reset();
             preview.reset();
+            setOfflinePreview(undefined);
           }}
-          preview={preview.data}
+          preview={currentPreview}
         />
       </Screen>
     );
@@ -174,6 +288,16 @@ export function ManualEntryFlow() {
         Enter only values you know. Unknown macros stay unknown and will be
         clearly marked in the preview.
       </Text>
+      {params.context === "historical" ? (
+        <View accessibilityRole="summary" style={styles.contextCard}>
+          <Text style={styles.contextTitle}>Historical portion suggestion</Text>
+          <Text style={styles.contextCopy}>
+            These values came from your own last confirmed serving. Plate size
+            and preparation can change, so check the amount before creating a
+            new preview.
+          </Text>
+        </View>
+      ) : null}
       <Controller
         control={control}
         name="foodName"
@@ -363,6 +487,11 @@ export function ManualEntryFlow() {
           {preview.error.message}
         </Text>
       ) : null}
+      {offlineNotice ? (
+        <Text accessibilityRole="alert" style={styles.offline}>
+          {offlineNotice}
+        </Text>
+      ) : null}
       <ActionButton
         busy={preview.isPending}
         label="Create complete preview"
@@ -409,5 +538,33 @@ const styles = StyleSheet.create({
     color: "#9F2D17",
     fontFamily: type.bodyStrong,
     marginTop: spacing.md,
+  },
+  contextCard: {
+    backgroundColor: colors.calamansiWash,
+    borderColor: colors.calamansiDeep,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    marginTop: spacing.md,
+    padding: spacing.md,
+  },
+  contextTitle: {
+    color: colors.ink,
+    fontFamily: type.bodyStrong,
+    fontSize: 14,
+  },
+  contextCopy: {
+    color: colors.inkMuted,
+    fontFamily: type.body,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  offline: {
+    backgroundColor: colors.calamansiWash,
+    color: colors.ink,
+    fontFamily: type.bodyStrong,
+    lineHeight: 20,
+    marginTop: spacing.md,
+    padding: spacing.md,
   },
 });

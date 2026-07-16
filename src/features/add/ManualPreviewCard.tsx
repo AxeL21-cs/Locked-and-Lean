@@ -13,12 +13,14 @@ export function ManualPreviewCard({
   onEdit,
   confirming,
   error,
+  localOnly,
 }: {
   preview: FoodPreview;
   onConfirm: () => void;
   onEdit: () => void;
   confirming?: boolean;
   error?: string;
+  localOnly?: boolean;
 }) {
   const complete =
     preview.totalProteinG != null &&
@@ -31,15 +33,24 @@ export function ManualPreviewCard({
         accessibilityLabel={`Preview revision ${preview.revision}, not yet logged`}
         style={styles.stamp}
       >
-        <Text style={styles.stampTop}>PREVIEW · NOT LOGGED</Text>
-        <Text style={styles.stampRevision}>REVISION {preview.revision}</Text>
+        <Text style={styles.stampTop}>
+          {localOnly
+            ? "ON-DEVICE PREVIEW · NOT LOGGED"
+            : "PREVIEW · NOT LOGGED"}
+        </Text>
+        <Text style={styles.stampRevision}>
+          {localOnly
+            ? "SERVER VERIFICATION PENDING"
+            : `REVISION ${preview.revision}`}
+        </Text>
       </View>
       <Text accessibilityRole="header" style={styles.title}>
         Check every detail
       </Text>
       <Text style={styles.copy}>
-        This is the complete current preview. Editing any value creates a new
-        preview that must be reviewed again.
+        {localOnly
+          ? "This snapshot contains exactly what you entered. After reconnecting, it logs only if the server preview matches; otherwise it stops for another review."
+          : "This is the complete current preview. Editing any value creates a new preview that must be reviewed again."}
       </Text>
       {preview.items.map((item) => (
         <View key={item.id} style={styles.item}>
@@ -110,9 +121,17 @@ export function ManualPreviewCard({
       ) : null}
       <ActionButton
         busy={confirming}
-        label={`Confirm revision ${preview.revision} and log it`}
+        label={
+          localOnly
+            ? "Confirm snapshot and queue safely"
+            : `Confirm revision ${preview.revision} and log it`
+        }
         onPress={onConfirm}
-        accessibilityHint="Permanently logs this exact displayed revision through the server confirmation transaction"
+        accessibilityHint={
+          localOnly
+            ? "Stores this exact snapshot for server verification; it does not log food yet"
+            : "Permanently logs this exact displayed revision through the server confirmation transaction"
+        }
       />
       <ActionButton
         disabled={confirming}

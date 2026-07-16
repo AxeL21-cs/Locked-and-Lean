@@ -54,6 +54,33 @@ async function withServer(
   }
 }
 
+async function withParsedBodyServer(
+  run: (baseUrl: string) => Promise<void>,
+): Promise<void> {
+  const handler = createHttpHandler(runtime());
+  const server = createServer(async (request, response) => {
+    const chunks: Buffer[] = [];
+    for await (const chunk of request) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const text = Buffer.concat(chunks).toString("utf8");
+    (request as typeof request & { body?: unknown }).body = text
+      ? JSON.parse(text)
+      : undefined;
+    await handler(request, response);
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  assert(address && typeof address === "object");
+  try {
+    await run(`http://127.0.0.1:${address.port}`);
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+  }
+}
+
 test("publishes canonical protected-resource metadata with standard scopes", () =>
   withServer(async (baseUrl) => {
     const response = await fetch(
@@ -62,6 +89,8 @@ test("publishes canonical protected-resource metadata with standard scopes", () 
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), {
       resource: "https://mcp.example.test",
+      resource_name: "Locked and Lean",
+      resource_documentation: "https://mcp.example.test/",
       authorization_servers: ["https://auth.example.test"],
       scopes_supported: ["openid"],
       bearer_methods_supported: ["header"],
@@ -121,4 +150,30 @@ test("accepts an MCP initialize request over Streamable HTTP", () =>
     };
     assert.equal(body.result?.serverInfo?.name, "locked-and-lean-mcp");
     assert.ok(body.result?.capabilities);
+  }));
+
+test("accepts a platform-preparsed MCP request body", () =>
+  withParsedBodyServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/event-stream",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-11-25",
+          capabilities: {},
+          clientInfo: { name: "preparsed-test", version: "1.0.0" },
+        },
+      }),
+    });
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as {
+      result?: { serverInfo?: { name?: string } };
+    };
+    assert.equal(body.result?.serverInfo?.name, "locked-and-lean-mcp");
   }));

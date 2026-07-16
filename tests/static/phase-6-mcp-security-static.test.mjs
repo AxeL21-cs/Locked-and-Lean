@@ -80,7 +80,11 @@ test("protected-resource discovery and both OAuth challenge paths are present", 
     /scopes_supported:\s*\[\.\.\.config\.standardScopes\]/,
   );
   assert.match(metadata, /bearer_methods_supported:\s*\["header"\]/);
-  assert.doesNotMatch(metadata, /resource_documentation/);
+  assert.match(metadata, /resource_name:\s*"Locked and Lean"/);
+  assert.match(
+    metadata,
+    /resource_documentation:\s*`\$\{config\.publicBaseUrl\}\/`/,
+  );
 
   const app = source("mcp-server/src/app.ts");
   assert.match(app, /\/\.well-known\/oauth-protected-resource/);
@@ -212,10 +216,7 @@ test("OAuth consent is hosted-only, fresh-user-bound, and blocks unsupported sco
   const adapter = source("src/services/supabase/adapter.ts");
   assert.match(adapter, /auth\.getUser\(\)/);
   assert.match(adapter, /getAuthorizationDetails/);
-  assert.match(
-    adapter,
-    /data\.authorization_id\.toLowerCase\(\) !== normalizedId/,
-  );
+  assert.match(adapter, /data\.authorization_id !== normalizedId/);
   assert.match(adapter, /data\.user\.id !== user\.id/);
   assert.match(adapter, /Unsupported OAuth scopes requested/);
   assert.match(adapter, /details\.approvalBlockedReasons\.length/);

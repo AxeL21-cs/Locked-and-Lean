@@ -20,7 +20,9 @@
     "src/repositories/**/*.ts",
     "src/tools/**/*.ts",
     "src/app.ts",
+    "src/runtime.ts",
     "src/server.ts",
+    "api/**/*.ts",
     "tests/**/*.ts"
   ]
 }
