@@ -50,27 +50,33 @@ test("calls only the reviewed RPC with the user token and publishable key", asyn
   assert.doesNotMatch(JSON.stringify(requestInit), /service[_-]?role/i);
 });
 
-test("unsupported preview action cannot reach fetch", async () => {
-  let called = false;
+test("preview actions map only to the reviewed OAuth RPCs", async () => {
+  const urls: string[] = [];
   const repository = new SupabaseRpcRepository({
     supabaseUrl: "https://project.supabase.co",
     publishableKey: "publishable-key",
-    fetch: async () => {
-      called = true;
-      return new Response("[]");
+    fetch: async (input) => {
+      urls.push(String(input));
+      return new Response(JSON.stringify([{ preview_id: "p1" }]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     },
   });
-  await assert.rejects(
-    repository.invoke({
-      action: "preview_food_log",
-      principal,
-      params: {},
-    }),
-    (error) =>
-      error instanceof RepositoryRequestError &&
-      error.code === "backend_contract_unavailable",
-  );
-  assert.equal(called, false);
+  await repository.invoke({
+    action: "preview_food_log",
+    principal,
+    params: {},
+  });
+  await repository.invoke({
+    action: "revise_food_log_preview",
+    principal,
+    params: {},
+  });
+  assert.deepEqual(urls, [
+    "https://project.supabase.co/rest/v1/rpc/create_chatgpt_food_log_preview",
+    "https://project.supabase.co/rest/v1/rpc/revise_chatgpt_food_log_preview",
+  ]);
 });
 
 test("repository errors expose only bounded status and code", async () => {

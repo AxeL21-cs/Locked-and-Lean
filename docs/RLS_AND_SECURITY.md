@@ -33,15 +33,24 @@ No policy authorizes from `user_metadata`, a request body `user_id`, or client-c
 
 Supabase currently does not provide the custom application scopes proposed by the product brief. Standard OIDC scopes do not authorize food writes. Under ADR-0001, the database therefore uses `private.oauth_client_action_policies` as an interim, server-owned, default-deny defense-in-depth policy.
 
-For an OAuth confirmation, the privileged helper:
+For an OAuth preview, revision, or confirmation, the privileged helpers:
 
 - requires a non-null authenticated subject;
 - reads `client_id` from `auth.jwt()`, never from function arguments;
-- requires an exact enabled `(client_id, 'confirm_food_log')` policy row;
+- require the exact enabled action row for `preview_food_log`,
+  `revise_food_log_preview`, or `confirm_food_log`;
 - denies a missing client ID, unknown client, disabled row, or wrong action;
-- still requires row ownership and the exact current preview revision.
+- still require row ownership; revision and confirmation also require the exact
+  current preview revision.
 
-The policy table ships empty. Enabling one action does not grant another. General production ChatGPT writes remain blocked until ADR-0001 exit criteria, live issuer/audience/time verification, revocation behavior, and least-privilege tests pass.
+The policy table is deny-by-default. Restricted testing may allowlist one
+reviewed OAuth client for these three exact actions; enabling one action does
+not grant another. The ChatGPT preview functions derive the owner and OAuth
+client from the token, accept bounded item facts rather than `user_id` or
+aggregate totals, force estimate provenance and uncertainty, calculate totals
+in PostgreSQL, and cannot create permanent history. General production ChatGPT
+writes remain blocked until ADR-0001 exit criteria, revocation behavior, and
+least-privilege tests pass.
 
 The reviewed mobile path is deliberately narrower: a normal authenticated Supabase token with no OAuth `client_id` may confirm only an owned preview whose source is `manual`, `barcode`, or `saved_food`. It cannot confirm `chatgpt`. Any token that carries `client_id` is treated as OAuth and must pass the exact action policy. Profile, target, saved-food, manual-preview, barcode lookup, barcode preview creation, and barcode revision are first-party-only. Weight and deletion allow first-party calls; OAuth calls require exact `record_weight` or `delete_food_entry` policy rows.
 
@@ -51,7 +60,7 @@ Phase 5 history reads use the same default-deny principle. First-party sessions 
 
 Privileged helpers are in the non-exposed `private` schema, use `SECURITY DEFINER` only where direct table writes require it, set `search_path = ''`, fully qualify database objects, re-derive `auth.uid()`, and re-check caller policy.
 
-Public wrappers are `SECURITY INVOKER`. Because an invoker wrapper must call its private bridge, `authenticated` has `USAGE` on `private` and execute on exactly twenty-two reviewed private bridge signatures: the prior eighteen plus save-meal, favorite-toggle, saved-meal-preview, and repeat-meal-preview. Direct Data API exposure remains limited to `public`; reuse-snapshot builders, GTIN/date validators, ranking/warning helpers, snapshot JSON helpers, replacement triggers, and the retained Phase 2 confirmation core are not granted.
+Public wrappers are `SECURITY INVOKER`. Because an invoker wrapper must call its private bridge, `authenticated` has `USAGE` on `private` and execute on exactly twenty-four reviewed private bridge signatures: the prior twenty-two plus ChatGPT preview creation and complete-snapshot revision. Direct Data API exposure remains limited to `public`; reuse-snapshot builders, GTIN/date validators, ranking/warning helpers, snapshot JSON helpers, replacement triggers, and the retained Phase 2 confirmation core are not granted.
 
 Earlier additive migrations repeat the blanket execute revocation after creating functions. The fast-logging migration revokes only its new signatures so it cannot disturb earlier reviewed RPCs, then grants its four reviewed public/private bridge pairs and the public suggestions read. The role-global default privilege revoke remains in force so future functions do not inherit `PUBLIC` execute. Deployment checks must inspect `pg_default_acl`, `pg_proc.proacl`, `prosecdef`, and `proconfig` to detect drift.
 
@@ -89,7 +98,9 @@ These SQL policies do not prove magic bytes, successful decoding, compression ra
 
 ## Explicit release blockers
 
-- Hosted-project drift, real token issuer/audience/revocation, and runtime MCP authorization are unverified.
+- Hosted-project drift and real post-expiry/revocation behavior remain
+  unverified; runtime MCP verification is implemented and needs that final
+  user-owned end-to-end evidence.
 - True concurrency, forced rollback, and adversarial Storage byte/owner cases remain unverified.
 - Account export/deletion and Storage cleanup are absent; deleting only `auth.users` can orphan meal images.
 - General ChatGPT writes remain blocked by ADR-0001 until granular authorization exit criteria pass.
@@ -100,7 +111,7 @@ These blockers must remain visible; mocks, static SQL inspection, and database c
 ## Required deployment checks
 
 1. Apply all migrations from an empty database.
-2. Run all pgTAP suites and verify planned assertion counts (currently 281/281 locally across seven suites).
+2. Run all pgTAP suites and verify planned assertion counts (currently 329/329 locally across ten suites).
 3. Inspect RLS flags, policies, table/sequence grants, function ACLs, owners, security mode, and search paths.
 4. Test anon, User A, User B, approved client, disabled/read-only client, unknown client, missing client ID, wrong issuer/audience, expired/revoked token, and service role.
 5. Race identical and conflicting idempotency keys and simulate response loss and transaction failures.

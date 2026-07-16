@@ -1,6 +1,6 @@
 # MCP security testing and response runbook
 
-Status: Phase 6 local contract and adversarial test specification. It does not represent a hosted OAuth grant, deployed MCP endpoint, MCP Inspector result, or production approval.
+Status: Phase 6 local and hosted restricted-client security specification. The endpoint and exact allowlist are deployed, but a real ChatGPT confirmation, post-expiry refresh/revocation test, MCP Inspector result, and general-production approval remain outstanding.
 
 ## Production authorization blocker
 
@@ -71,18 +71,18 @@ Revocation is a production blocker unless the deployed design can demonstrate th
 
 ## Preview, revision, and permanent-write matrix
 
-The current database does not expose an OAuth-compatible preview creation or general revision RPC. The Phase 6 scaffold must therefore authenticate those tools and then return a deterministic `backend_contract_unavailable` error with `permanent_write: false`, without calling an incompatible RPC and without suggesting that reauthorization will fix the backend contract.
+The database exposes bounded OAuth-only preview creation and complete-snapshot revision RPCs. Both derive the owner from `auth.uid()`, require an exact enabled client/action policy, force ChatGPT interpretation provenance and estimate warnings, calculate aggregate totals from stored items, and return `permanent_write: false`. Only canonical confirmation can create a diary entry.
 
-Repository fixtures are synthetic local adapters. Current local tests must prove:
+Repository fixtures are synthetic local adapters. Current local tests prove:
 
-- preview and general revision call no repository while this backend blocker is active;
+- preview and general revision call only their reviewed bounded RPC mappings;
 - confirmation, weight, deletion, and history reads use only their reviewed bounded RPC mappings;
 - ambiguous or false confirmation is rejected before repository access;
 - stale, unpresented, expired, cross-user, and exactly-once confirmation remain enforced by the existing database pgTAP suites;
 - MCP confirmation forwards only preview ID, confirmed revision, literal confirmation, and idempotency key; and
 - the MCP server forwards the user bearer token to the bounded Supabase RPC path and never substitutes a service-role credential.
 
-Closing the preview/revision blocker requires executable tests to prove:
+The executable preview/revision gate proves:
 
 - `preview_food_log` creates a complete temporary revision and no permanent entry;
 - preview totals are repository/server results, never client-trusted aggregates;

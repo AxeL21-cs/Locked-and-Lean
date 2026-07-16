@@ -163,9 +163,14 @@ test("repository forwards the user token only to reviewed RPC mappings", () => {
   ]) {
     assert.match(repository, new RegExp(`${action}: "${action}"`));
   }
-  assert.doesNotMatch(repository, /preview_food_log:\s*"/);
-  assert.doesNotMatch(repository, /revise_food_log_preview:\s*"/);
-  assert.match(repository, /backend_contract_unavailable/);
+  assert.match(
+    repository,
+    /preview_food_log:\s*"create_chatgpt_food_log_preview"/,
+  );
+  assert.match(
+    repository,
+    /revise_food_log_preview:\s*"revise_chatgpt_food_log_preview"/,
+  );
   assert.match(
     repository,
     /Authorization:\s*`Bearer \$\{invocation\.principal\.accessToken\}`/,
@@ -177,12 +182,9 @@ test("repository forwards the user token only to reviewed RPC mappings", () => {
 test("tool execution preserves preview-only and exact confirmation boundaries", () => {
   const execute = source("mcp-server/src/tools/execute.ts");
   assert.match(execute, /definition\.inputSchema\.safeParse/);
-  assert.match(
-    execute,
-    /definition\.action === "preview_food_log"[\s\S]*?definition\.action === "revise_food_log_preview"[\s\S]*?return unsupportedBackendContract\(\)/,
-  );
-  assert.match(execute, /code:\s*"backend_contract_unavailable"/);
   assert.match(execute, /permanent_write:\s*false/);
+  assert.match(execute, /p_items:\s*input\.items/);
+  assert.match(execute, /p_time_zone:\s*"Asia\/Manila"/);
   assert.match(execute, /p_confirmed_revision:\s*input\.confirmed_revision/);
   assert.match(execute, /p_confirmation:\s*input\.confirmation/);
   assert.match(execute, /p_idempotency_key:\s*input\.idempotency_key/);
@@ -195,6 +197,42 @@ test("tool execution preserves preview-only and exact confirmation boundaries", 
     execute,
     /context\.verifier\.verify[\s\S]*?context\.repository\.invoke/,
   );
+});
+
+test("ChatGPT preview RPCs are owner-derived, client-scoped, and preview-only", () => {
+  const migration = source(
+    "supabase/migrations/20260716110100_chatgpt_food_preview_flow.sql",
+  );
+  assert.match(migration, /v_user_id uuid := \(select auth\.uid\(\)\)/);
+  assert.match(
+    migration,
+    /v_client_id text := \(select auth\.jwt\(\)\) ->> 'client_id'/,
+  );
+  assert.match(
+    migration,
+    /policy\.action = 'preview_food_log'[\s\S]*?policy\.enabled/,
+  );
+  assert.match(
+    migration,
+    /policy\.action = 'revise_food_log_preview'[\s\S]*?policy\.enabled/,
+  );
+  assert.match(migration, /'chatgpt', 'draft'/);
+  assert.match(migration, /'chatgpt_interpretation_v1'/);
+  assert.match(migration, /coalesce\(sum\(i\.calories\), 0\)/);
+  assert.match(migration, /item\.is_estimated/);
+  assert.doesNotMatch(
+    migration,
+    /p_user_id|p_total_calories|p_total_protein|p_total_carbohydrates|p_total_fat/,
+  );
+  assert.match(
+    migration,
+    /create or replace function public\.create_chatgpt_food_log_preview[\s\S]*?security invoker/,
+  );
+  assert.match(
+    migration,
+    /revoke all on function private\.create_chatgpt_food_log_preview[\s\S]*?from public, anon, authenticated/,
+  );
+  assert.doesNotMatch(migration, /insert into public\.food_entries/);
 });
 
 test("OAuth consent is hosted-only, fresh-user-bound, and blocks unsupported scopes", () => {

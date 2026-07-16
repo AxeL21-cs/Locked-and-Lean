@@ -117,6 +117,30 @@ function executionFixture(
       async invoke(invocation) {
         repositoryCalls += 1;
         invocations.push(invocation);
+        if (
+          invocation.action === "preview_food_log" ||
+          invocation.action === "revise_food_log_preview"
+        ) {
+          return [
+            {
+              preview_id: "61000000-0000-4000-8000-000000000002",
+              revision_number:
+                invocation.action === "revise_food_log_preview" ? 2 : 1,
+              status: "ready",
+              total_calories: 300,
+              items: [
+                {
+                  food_name: "Synthetic QA meal",
+                  quantity: 1,
+                  unit: "serving",
+                  calories: 300,
+                  is_estimated: true,
+                  uncertainty: ["Synthetic fixture"],
+                },
+              ],
+            },
+          ];
+        }
         return [{ fixture_result: "synthetic" }];
       },
     } satisfies NutritionRepository);
@@ -376,7 +400,7 @@ test("invalid confirmation is rejected before verification or repository access"
   assert.match(firstContent.text, /failed validation/i);
 });
 
-test("preview and revision fail honestly without calling incompatible backend RPCs", async () => {
+test("preview and revision forward bounded complete snapshots without permanent writes", async () => {
   const fixture = executionFixture();
   const preview = await executeTool(
     "preview_food_log",
@@ -401,22 +425,36 @@ test("preview and revision fail honestly without calling incompatible backend RP
     {
       preview_id: "61000000-0000-4000-8000-000000000002",
       expected_revision: 1,
-      serving_id: "61000000-0000-4000-8000-000000000003",
-      serving_count: 2,
+      meal_type: "lunch",
+      consumed_at: "2026-07-13T04:00:00.000Z",
+      original_description: "Corrected synthetic QA preview",
+      items: [
+        {
+          food_name: "Synthetic QA meal",
+          quantity: 1,
+          unit: "serving",
+          calories: 300,
+          uncertainty: ["Corrected synthetic fixture"],
+        },
+      ],
     },
     fixture.context,
   );
 
   for (const result of [preview, revision]) {
-    assert.equal(result.isError, true);
-    assert.deepEqual(result.structuredContent, {
-      code: "backend_contract_unavailable",
-      permanent_write: false,
-    });
+    assert.equal(result.isError, undefined);
+    assert.equal(result.structuredContent?.permanent_write, false);
     assert.equal(result._meta?.["mcp/www_authenticate"], undefined);
   }
   assert.equal(fixture.verifyCalls(), 2);
-  assert.equal(fixture.repositoryCalls(), 0);
+  assert.equal(fixture.repositoryCalls(), 2);
+  assert.deepEqual(
+    fixture.invocations.map((invocation) => invocation.action),
+    ["preview_food_log", "revise_food_log_preview"],
+  );
+  for (const invocation of fixture.invocations) {
+    assert.doesNotMatch(JSON.stringify(invocation.params), /user_id/i);
+  }
 });
 
 test("exact confirmation forwards no user identity or client aggregate totals", async () => {

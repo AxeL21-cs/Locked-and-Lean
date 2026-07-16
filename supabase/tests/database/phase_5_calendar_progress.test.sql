@@ -540,8 +540,8 @@ select is(
      on namespace.oid = procedure.pronamespace
    where namespace.nspname = 'private'
      and has_function_privilege('authenticated', procedure.oid, 'EXECUTE')),
-  22,
-  'authenticated can execute exactly twenty-two reviewed private bridge functions'
+  24,
+  'authenticated can execute exactly twenty-four reviewed private bridge functions'
 );
 set local role authenticated;
 set local "request.jwt.claims" =

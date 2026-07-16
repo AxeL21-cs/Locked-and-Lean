@@ -119,8 +119,11 @@ function repositoryParams(
       return {
         p_preview_id: input.preview_id,
         p_expected_revision: input.expected_revision,
-        p_serving_id: input.serving_id,
-        p_serving_count: input.serving_count,
+        p_meal_type: input.meal_type,
+        p_consumed_at: input.consumed_at,
+        p_time_zone: "Asia/Manila",
+        p_original_description: input.original_description,
+        p_items: input.items,
       };
     case "confirm_food_log":
       return {
@@ -243,10 +246,21 @@ function shapeResult(
     case "preview_food_log":
     case "revise_food_log_preview": {
       const preview = firstRecord(value);
-      if (!preview) return missingRepositoryResult();
+      const revisionNumber = finiteNumber(preview?.revision_number);
+      if (
+        !preview ||
+        preview.status !== "ready" ||
+        revisionNumber === null ||
+        revisionNumber < 1 ||
+        finiteNumber(preview.total_calories) === null ||
+        !Array.isArray(preview.items) ||
+        preview.items.length < 1
+      ) {
+        return missingRepositoryResult();
+      }
       return success(
         { preview, permanent_write: false },
-        "A temporary preview is ready. No diary entry was created.",
+        `Temporary revision ${revisionNumber} is ready. No diary entry was created. Show the complete returned snapshot and ask the user to confirm this exact revision before logging it.`,
       );
     }
     case "confirm_food_log": {
@@ -300,17 +314,16 @@ function authorizationDeniedResult(): CallToolResult {
   };
 }
 
-function unsupportedBackendContract(): CallToolResult {
+function repositoryValidationResult(): CallToolResult {
   return {
     isError: true,
     structuredContent: {
-      code: "backend_contract_unavailable",
-      permanent_write: false,
+      code: "request_rejected",
     },
     content: [
       {
         type: "text",
-        text: "This preview workflow is unavailable because no reviewed OAuth-compatible backend RPC exists. No diary entry or preview was written.",
+        text: "The server rejected this request because the preview was invalid, stale, expired, or reused with different confirmation data. Review the current preview and try a corrected request; no unconfirmed diary entry was created.",
       },
     ],
   };
@@ -365,12 +378,6 @@ export async function executeTool(
       requiredScopes: ["openid"],
     });
     const today = manilaDate(context.now?.() ?? new Date());
-    if (
-      definition.action === "preview_food_log" ||
-      definition.action === "revise_food_log_preview"
-    ) {
-      return unsupportedBackendContract();
-    }
     const value = await context.repository.invoke({
       action: definition.action,
       principal,
@@ -412,6 +419,12 @@ export async function executeTool(
     }
     if (error instanceof RepositoryRequestError && error.status === 403) {
       return authorizationDeniedResult();
+    }
+    if (
+      error instanceof RepositoryRequestError &&
+      (error.status === 400 || error.status === 409 || error.status === 422)
+    ) {
+      return repositoryValidationResult();
     }
     if (
       error instanceof RepositoryUnavailableError ||

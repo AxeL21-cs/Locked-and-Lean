@@ -28,8 +28,7 @@ const foodItemSchema = z
     protein_g: z.number().min(0).max(10000).nullable().optional(),
     carbohydrates_g: z.number().min(0).max(10000).nullable().optional(),
     fat_g: z.number().min(0).max(10000).nullable().optional(),
-    food_product_id: uuidSchema.nullable().optional(),
-    is_estimated: z.boolean().optional(),
+    is_estimated: z.literal(true).optional(),
     confidence: z.number().min(0).max(1).nullable().optional(),
     uncertainty: z
       .union([z.array(z.unknown()).max(50), jsonRecordSchema])
@@ -237,7 +236,7 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     name: "preview_food_log",
     title: "Create a food-log preview",
     description:
-      "Validates item-level nutrition and creates a temporary, server-calculated preview only. It cannot create a diary entry; show the complete returned revision before asking for confirmation.",
+      "Creates a temporary estimate from complete item-level nutrition, marks every item as estimated, and calculates totals on the server. It cannot create a diary entry. Show every returned item, uncertainty, meal, time, and total before asking the user to confirm that exact revision.",
     action: "preview_food_log",
     inputSchema: z
       .object({
@@ -261,16 +260,18 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
   },
   {
     name: "revise_food_log_preview",
-    title: "Revise a barcode serving preview",
+    title: "Revise a food-log preview",
     description:
-      "Creates and presents the next immutable revision for an existing barcode preview using a server-owned serving option. The prior revision becomes stale and cannot be confirmed.",
+      "Replaces a ChatGPT preview with one complete corrected snapshot and returns the next immutable revision. Include all unchanged and changed items. The prior revision becomes stale and cannot be confirmed; show the complete returned revision before asking again for confirmation.",
     action: "revise_food_log_preview",
     inputSchema: z
       .object({
         preview_id: uuidSchema,
         expected_revision: z.number().int().positive(),
-        serving_id: uuidSchema.nullable(),
-        serving_count: z.number().positive().max(100),
+        meal_type: mealTypeSchema,
+        consumed_at: instantSchema,
+        original_description: z.string().trim().min(1).max(4000),
+        items: z.array(foodItemSchema).min(1).max(100),
       })
       .strict(),
     outputSchema: z.object({
@@ -289,7 +290,7 @@ export const TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     name: "confirm_food_log",
     title: "Confirm the exact food-log revision",
     description:
-      "Permanently logs only the exact current presented revision after explicit confirmation. Reuse the same idempotency key only for an identical retry.",
+      "Permanently logs only the exact current revision after the user has seen its complete server-returned preview and explicitly confirmed it in a later message or approval step. Never call this in the same step that creates or revises a preview. Reuse the same idempotency key only for an identical retry.",
     action: "confirm_food_log",
     inputSchema: z
       .object({

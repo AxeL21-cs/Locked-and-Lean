@@ -78,7 +78,10 @@ set local "request.jwt.claims" =
   '{"sub":"31111111-1111-4111-8111-111111111111","role":"authenticated"}';
 insert into phase_3_ids (key, id)
 select 'target_a', target_id
-from public.propose_nutrition_target(20, 'sedentary', 'lose', 1, '2026-07-14');
+from public.propose_nutrition_target(
+  20, 'sedentary', 'lose', 1,
+  (now() at time zone 'Asia/Manila')::date
+);
 
 select is(
   (select status from public.nutrition_targets where id = (select id from phase_3_ids where key = 'target_a')),
@@ -280,11 +283,15 @@ select ok(
   'explicit owner deletion soft-deletes the entry'
 );
 select results_eq(
-  $$ select entry_count, consumed_calories from public.daily_summaries
-     where user_id = '31111111-1111-4111-8111-111111111111'
-       and local_date = '2026-07-14' $$,
+  $$ select
+       coalesce((select entry_count from public.daily_summaries
+         where user_id = '31111111-1111-4111-8111-111111111111'
+           and local_date = '2026-07-14'), 0),
+       coalesce((select consumed_calories from public.daily_summaries
+         where user_id = '31111111-1111-4111-8111-111111111111'
+           and local_date = '2026-07-14'), 0) $$,
   $$ values (0, 0::numeric) $$,
-  'deletion transactionally recalculates the affected summary'
+  'deletion transactionally clears the affected historical summary'
 );
 
 select results_eq(

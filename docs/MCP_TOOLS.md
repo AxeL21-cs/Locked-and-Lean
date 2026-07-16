@@ -7,25 +7,27 @@ enforces an exact client/action policy, and invokes reviewed Supabase RPCs.
 
 ## Tool contract
 
-| Tool                         | Effect                                                     | Backing RPC / status                                                                                                    |
-| ---------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `health`                     | Read configuration status without user data                | No authentication; always reports `production_ready: false` in Phase 6                                                  |
-| `get_calendar_history`       | Read owner-scoped Manila daily summaries                   | `get_calendar_history`                                                                                                  |
-| `get_today_calories`         | Read today's server-calculated calories and active target  | Derived from a one-day `get_calendar_history` call using the MCP server's current `Asia/Manila` date                    |
-| `get_weekly_protein_average` | Read the current seven-day daily protein average           | Derived from seven complete `get_calendar_history` days; returns no average when any day's macro data is incomplete     |
-| `get_day_history`            | Read owner-scoped confirmed entry snapshots                | `get_day_history`                                                                                                       |
-| `get_progress_summary`       | Read owner-scoped progress aggregates                      | `get_progress_summary`                                                                                                  |
-| `get_weight_trend`           | Read measured weights without interpolation                | `get_weight_trend`                                                                                                      |
-| `preview_food_log`           | Intended to create a temporary, non-permanent preview      | Deterministically blocked: no reviewed OAuth-compatible preview RPC exists                                              |
-| `revise_food_log_preview`    | Intended to create the next preview revision               | Deterministically blocked: the existing barcode-only RPC is not a general correction contract and rejects OAuth clients |
-| `confirm_food_log`           | Confirm one exact current revision with an idempotency key | `confirm_food_log`; practically unavailable to ChatGPT until an OAuth-compatible preview path exists                    |
-| `record_weight`              | Record an owner-scoped metric measurement idempotently     | `record_weight`                                                                                                         |
-| `delete_food_entry`          | Soft-delete one owned entry after literal confirmation     | `delete_food_entry`                                                                                                     |
+| Tool                         | Effect                                                     | Backing RPC / status                                                                                                |
+| ---------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `health`                     | Read configuration status without user data                | No authentication; always reports `production_ready: false` in Phase 6                                              |
+| `get_calendar_history`       | Read owner-scoped Manila daily summaries                   | `get_calendar_history`                                                                                              |
+| `get_today_calories`         | Read today's server-calculated calories and active target  | Derived from a one-day `get_calendar_history` call using the MCP server's current `Asia/Manila` date                |
+| `get_weekly_protein_average` | Read the current seven-day daily protein average           | Derived from seven complete `get_calendar_history` days; returns no average when any day's macro data is incomplete |
+| `get_day_history`            | Read owner-scoped confirmed entry snapshots                | `get_day_history`                                                                                                   |
+| `get_progress_summary`       | Read owner-scoped progress aggregates                      | `get_progress_summary`                                                                                              |
+| `get_weight_trend`           | Read measured weights without interpolation                | `get_weight_trend`                                                                                                  |
+| `preview_food_log`           | Create and return a complete temporary estimated preview   | `create_chatgpt_food_log_preview`; server-calculates totals and never writes diary history                          |
+| `revise_food_log_preview`    | Replace the preview with one complete corrected revision   | `revise_chatgpt_food_log_preview`; rejects stale, expired, non-ChatGPT, or cross-owner previews                     |
+| `confirm_food_log`           | Confirm one exact current revision with an idempotency key | `confirm_food_log`; only canonical permanent food write after a later explicit confirmation                         |
+| `record_weight`              | Record an owner-scoped metric measurement idempotently     | `record_weight`                                                                                                     |
+| `delete_food_entry`          | Soft-delete one owned entry after literal confirmation     | `delete_food_entry`                                                                                                 |
 
-Preview and revision tools authenticate first and then return
-`backend_contract_unavailable` with `permanent_write: false`. They never call
-the incompatible database RPCs. This is an intentional security boundary, not
-a mock success.
+Preview and revision authenticate first, require an exact enabled
+`(client_id, action)` policy, derive ownership from the bearer token, and return
+the whole server-stored snapshot with `permanent_write: false`. ChatGPT must
+show every returned item, uncertainty, meal, time, and total before it may ask
+for confirmation. A correction sends one complete replacement snapshot and
+makes the prior revision stale.
 
 ## Descriptor rules
 
@@ -36,15 +38,16 @@ compatibility mirror. Preview and revision are marked non-read-only because a
 compatible future implementation would create temporary database state.
 
 Write inputs never accept `user_id` or client-calculated aggregate totals.
+ChatGPT item interpretations are forced to `is_estimated: true`, missing
+uncertainty receives an explicit warning, and provider provenance is
+server-owned.
 Food confirmation requires the exact `preview_id`, positive
 `confirmed_revision`, literal `confirmation: true`, and an idempotency key.
 Deletion likewise requires literal confirmation.
 
-The Phase 6 catalog does not claim today/recent shorthand, update/copy-entry,
-update/copy-entry, or a general correction workflow. The two read-only
-shorthand tools above are safe projections of the existing owner-scoped
-calendar RPC; write-oriented shortcuts still require reviewed backend
-contracts before they can be added.
+The two read-only shorthand tools are safe projections of the existing
+owner-scoped calendar RPC. Update/copy-entry and other write-oriented shortcuts
+still require their own reviewed backend contracts before they can be added.
 
 References: [Define tools](https://developers.openai.com/apps-sdk/plan/tools),
 [Build an MCP server](https://developers.openai.com/apps-sdk/build/mcp-server),

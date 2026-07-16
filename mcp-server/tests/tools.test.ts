@@ -202,9 +202,9 @@ test("configured but externally blocked health is degraded", async () => {
   });
 });
 
-test("preview authenticates then blocks without a repository call", async () => {
+test("preview authenticates and returns a complete temporary snapshot", async () => {
   let verified = false;
-  let invoked = false;
+  let captured: Record<string, unknown> | undefined;
   const verifier: AccessTokenVerifier = {
     configured: true,
     verify: async () => {
@@ -214,9 +214,26 @@ test("preview authenticates then blocks without a repository call", async () => 
   };
   const repository: NutritionRepository = {
     configured: true,
-    invoke: async () => {
-      invoked = true;
-      return [];
+    invoke: async (invocation) => {
+      captured = invocation.params;
+      return [
+        {
+          preview_id: "61000000-0000-4000-8000-000000000002",
+          revision_number: 1,
+          status: "ready",
+          total_calories: 200,
+          items: [
+            {
+              food_name: "Rice",
+              quantity: 1,
+              unit: "cup",
+              calories: 200,
+              is_estimated: true,
+              uncertainty: { portion: "user estimate" },
+            },
+          ],
+        },
+      ];
     },
   };
   const result = await executeTool(
@@ -239,12 +256,87 @@ test("preview authenticates then blocks without a repository call", async () => 
     context({ verifier, repository }),
   );
   assert.equal(verified, true);
-  assert.equal(invoked, false);
-  assert.equal(result.isError, true);
-  assert.deepEqual(result.structuredContent, {
-    code: "backend_contract_unavailable",
-    permanent_write: false,
+  assert.equal(result.isError, undefined);
+  assert.deepEqual(captured, {
+    p_meal_type: "lunch",
+    p_consumed_at: "2026-07-13T12:00:00+08:00",
+    p_time_zone: "Asia/Manila",
+    p_original_description: "one cup rice",
+    p_items: [
+      {
+        food_name: "Rice",
+        quantity: 1,
+        unit: "cup",
+        calories: 200,
+        is_estimated: true,
+        uncertainty: { portion: "user estimate" },
+      },
+    ],
   });
+  assert.equal(result.structuredContent?.permanent_write, false);
+  assert.equal(
+    (result.structuredContent?.preview as Record<string, unknown>).status,
+    "ready",
+  );
+});
+
+test("revision forwards one complete replacement snapshot", async () => {
+  let captured: Record<string, unknown> | undefined;
+  const result = await executeTool(
+    "revise_food_log_preview",
+    {
+      preview_id: "61000000-0000-4000-8000-000000000002",
+      expected_revision: 1,
+      meal_type: "lunch",
+      consumed_at: "2026-07-13T12:00:00+08:00",
+      original_description: "three quarters cup rice",
+      items: [
+        {
+          food_name: "Rice",
+          quantity: 0.75,
+          unit: "cup",
+          calories: 150,
+          uncertainty: { portion: "corrected estimate" },
+        },
+      ],
+    },
+    context({
+      repository: {
+        configured: true,
+        invoke: async (invocation) => {
+          captured = invocation.params;
+          return [
+            {
+              preview_id: invocation.params.p_preview_id,
+              revision_number: 2,
+              status: "ready",
+              total_calories: 150,
+              items: invocation.params.p_items,
+            },
+          ];
+        },
+      },
+    }),
+  );
+  assert.equal(result.isError, undefined);
+  assert.deepEqual(captured, {
+    p_preview_id: "61000000-0000-4000-8000-000000000002",
+    p_expected_revision: 1,
+    p_meal_type: "lunch",
+    p_consumed_at: "2026-07-13T12:00:00+08:00",
+    p_time_zone: "Asia/Manila",
+    p_original_description: "three quarters cup rice",
+    p_items: [
+      {
+        food_name: "Rice",
+        quantity: 0.75,
+        unit: "cup",
+        calories: 150,
+        uncertainty: { portion: "corrected estimate" },
+      },
+    ],
+  });
+  assert.equal(result.structuredContent?.permanent_write, false);
 });
 
 test("record weight maps only server-reviewed parameters and fixed timezone", async () => {

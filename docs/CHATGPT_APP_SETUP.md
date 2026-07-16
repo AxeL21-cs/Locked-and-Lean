@@ -1,7 +1,7 @@
 # ChatGPT app setup status
 
-The Phase 6 MCP package is suitable for local contract and transport testing.
-It must not yet be registered or described as a production-ready ChatGPT app.
+The Phase 6 MCP package is deployed for restricted, allowlisted testing. It is
+not a general-production ChatGPT app while the remaining gates below are open.
 
 ## Local verification
 
@@ -40,9 +40,9 @@ be completed and recorded:
 2. Configure an authorization server that issues the exact resource audience,
    `client_id`, user identity/role, standard scopes, and verifiable asymmetric
    JWTs expected by the server.
-3. Add a reviewed general preview/revision backend contract that accepts the
-   authorized OAuth application without weakening RLS, exact-revision checks,
-   transactional confirmation, or idempotency.
+3. Graduate the reviewed restricted preview/revision backend contract from one
+   allowlisted client to general access only after ADR-0001's authorization
+   exit criteria pass.
 4. Verify discovery, authorization, token refresh/revocation behavior, every
    tool descriptor, and every challenge with MCP Inspector and ChatGPT
    developer mode.
@@ -71,10 +71,13 @@ A `401` should trigger refresh/re-authentication; a policy `403` should not ask
 the user to reconnect. Never place either token in screenshots, logs, docs, or
 test fixtures.
 
-The server now exposes two focused read-only tools for the initial safe stage:
+The server exposes two focused read-only tools for the initial safe stage:
 `get_today_calories` and `get_weekly_protein_average`. The latter returns no
 numeric average when any of the seven Manila days has incomplete macro data.
-Food-writing tools remain blocked until the preview/revision/confirmation path
-is end-to-end compatible and verified.
+For one reviewed client, food logging is limited to a complete temporary
+preview, complete-snapshot revisions, and a separate exact confirmation. The
+preview functions cannot write permanent history; final confirmation remains
+transactional and idempotent. Real ChatGPT post-expiry refresh/revocation and
+end-to-end confirmation evidence are still required.
 
 Reference: [Build an MCP server](https://developers.openai.com/apps-sdk/build/mcp-server).

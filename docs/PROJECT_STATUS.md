@@ -29,7 +29,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Passed the complete Phase 5 app, domain, database, static-contract, and production-export gate.
 - Added a separate pinned Streamable HTTP MCP server with protected-resource metadata, strict tool descriptors, OAuth challenges, asymmetric JWKS verification, exact client/action policy, reviewed Supabase RPC mappings, coarse health, and adversarial tests.
 - Added a hosted-config-only OAuth consent route that preserves one validated authorization request through fresh sign-in, blocks unsupported scopes and unsafe redirects, and never represents identity scopes as tool authorization.
-- Kept unavailable preview/revision mappings fail-closed as `backend_contract_unavailable`; no repository call or permanent write occurs.
+- Initially kept unavailable preview/revision mappings fail-closed as `backend_contract_unavailable`; no repository call or permanent write could occur before the reviewed contract existed.
 - Passed the Phase 6 local mobile, MCP, security, static-contract, production-export, and live-process gate, while retaining the production blocker.
 - Deployed all four application migrations to the hosted Supabase project and verified local/remote migration alignment, application-schema lint, and hosted security/performance advisors.
 - Configured the production Expo environment with the hosted Supabase URL and publishable client key only; no service-role credential or OpenAI model credential is present in the mobile build.
@@ -48,6 +48,9 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Deployed the fast-logging schema and its saved-meal source index to hosted Supabase, redeployed the SQLite-enabled web app and updated MCP server, and verified the canonical production aliases.
 - Bound the one existing, actively consented ChatGPT OAuth client to read-only `get_calendar_history` access in both the private database policy and MCP runtime. Today-calorie and weekly-protein questions are enabled; food-writing permissions remain denied.
 - Produced the Android 0.3.0 (versionCode 3) signed internal-distribution APK with the new SQLite/network/haptics native modules.
+- Added OAuth-only ChatGPT preview creation and complete-snapshot revision RPCs. They derive owner/client from the token, require exact action rows, force estimate provenance and uncertainty, calculate totals in PostgreSQL, preserve immutable revisions, and cannot create permanent history.
+- Replaced the MCP preview/revision kill-switch with the reviewed RPCs while preserving the separate exact-revision, literal-confirmation, transactional, and idempotent permanent-write gate.
+- Deployed migration `20260716110100` and MCP deployment `dpl_4bby4KEpVMMhDRPuGE3ARtyRzVgs`; the existing consented ChatGPT client is restricted to calendar reads plus preview, revision, and exact confirmation.
 
 ## Blocked work
 
@@ -56,7 +59,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 
 ## Test status
 
-- `npm run check`: passed (Prettier, Expo lint with zero warnings, TypeScript, 27 Jest suites / 160 tests, 43 static contract checks, 35 MCP tests/build, and prohibited OpenAI model API scan).
+- `npm run check`: passed (Prettier, Expo lint with zero warnings, TypeScript, 27 Jest suites / 160 tests, 44 static contract checks, 36 MCP tests/build, and prohibited OpenAI model API scan).
 - Expo public config resolution: passed.
 - Credentials-free Expo web production export: passed (26 routes, including `/barcode-scan`).
 - Browser verification at 390x844: passed for Today, Calendar, Add, Progress, and Profile; no error overlay or browser console errors; Add safe-inactive feedback verified.
@@ -89,13 +92,16 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Hosted Supabase migration alignment passed through `20260716101733`; `saved_meals` has RLS enabled and all five fast-log functions are present. The hosted performance advisor no longer reports an unindexed `saved_meals` foreign key.
 - Production web verification passed with HTTP 200 and the required `Cross-Origin-Embedder-Policy: credentialless` and `Cross-Origin-Opener-Policy: same-origin` headers. Production MCP health, protected-resource metadata, protocol initialization, and a 12-tool catalog check passed; the catalog includes the two new read-only insight tools.
 - Android EAS production build `e5421785-c90d-45a1-8d48-a4ed272d39b1` finished for version 0.3.0 (build 3). The downloaded 129,913,082-byte APK contains `AndroidManifest.xml` and five DEX files; SHA-256 is `8F452B8A35954123D91979548AFEE1AB6C7B823EC7A04CAD2F904D7D03C03DEB`.
+- ChatGPT preview database gate: the full clean local directory passed 329/329 pgTAP assertions across ten suites; application-schema lint returned no errors.
+- Current repository gate: `npm run check` passed 160 mobile tests, 44 static/security contracts, 36 MCP tests plus typecheck/build, formatting/lint/typecheck, and the prohibited OpenAI model API scan.
+- Hosted verification: migration history contains `20260716110100`; all four preview/revision wrappers and bridges have the expected security modes and grants; the canonical production MCP alias exposes 12 tools with the complete preview/revision schemas; and an unauthenticated preview returns the OAuth challenge before repository access.
 
 ## Security status
 
 - No secrets or credentials detected.
 - No OpenAI model API dependency exists.
-- RLS and transactional confirmation are implemented, fully tested locally, and deployed to hosted Supabase. Hosted migration alignment and audience-hook ACL/behavior checks passed; real ChatGPT token validation remains Phase 6 work.
-- The latest hosted security advisor reports leaked-password protection disabled and an informational no-policy notice for the intentionally private, service-role-only provider registry; these pre-existing settings were not silently changed by this deployment.
+- RLS and transactional confirmation are implemented, fully tested locally, and deployed to hosted Supabase. Hosted migration alignment, audience-hook ACL/behavior, MCP verifier configuration, and unauthenticated challenge checks passed; a real ChatGPT preview/confirmation and post-expiry/revocation test remain Phase 6 evidence.
+- The latest hosted security advisor reports leaked-password protection disabled, insufficient MFA options, and an informational no-policy notice for the intentionally private, service-role-only provider registry; these project settings were not silently changed by this deployment. The performance advisor reports informational covering-index suggestions on pre-existing foreign keys and expected unused indexes; the preview migration adds functions only and introduced no new relation or foreign key.
 - `npm audit --omit=dev` reports 11 moderate findings from Expo's native `xcode -> uuid` toolchain. The offered automatic fix is a breaking Expo downgrade, so it is not applied; monitor the upstream Expo dependency update before production.
 
 ## Known limitations
@@ -105,7 +111,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Barcode lookup currently uses the server catalog snapshot; live nutrition providers and licensed Philippine datasets remain unconnected pending terms/licensing review.
 - Physical iOS/Android camera capture and OS-settings round trips, full hosted pgTAP under a privileged test role, and true concurrent idempotency remain unverified.
 - Physical Android verification at 200% system font scale, TalkBack traversal, and low-end-device frame profiling remain required for the redesigned interface.
-- MCP preview/revision and food-write tools remain intentionally unavailable because no OAuth-compatible general preview RPC exists. Today calories and weekly protein are now read-only; update/copy writes remain blocked.
+- The existing allowlisted ChatGPT client can preview, revise, and exactly confirm a food log. General clients and update/copy/weight/delete writes remain blocked; the first real ChatGPT exact-confirmation and post-expiry/revocation evidence are still outstanding.
 - Multi-item saved-meal composition is not yet exposed by the mobile adapter; the current UI supports saved foods and confirmed-entry copy previews. Recent quick logging uses yesterday plus locally confirmed usuals rather than a server-wide recent list.
 - Hosted authorization-code/PKCE, real ChatGPT linking, MCP Inspector, revocation behavior, TLS/proxy/rate limits, chunked-body bounding, and production telemetry retention remain unverified.
 

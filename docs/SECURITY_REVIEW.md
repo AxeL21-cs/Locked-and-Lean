@@ -1,4 +1,11 @@
-# Locked and Lean Phase 2 security review
+# Locked and Lean Phase 2 security review (historical snapshot)
+
+This file records the Phase 2 review boundary as it existed on its review date.
+It is not the current Phase 6 status. The protected MCP resource, asymmetric
+per-request verifier, restricted client/action policy, and ChatGPT
+preview/revision/exact-confirmation path are now implemented and deployed.
+General granular authorization plus real post-expiry refresh/revocation and
+user-owned end-to-end evidence remain open; see `docs/PROJECT_STATUS.md`.
 
 Review date: 2026-07-13 (post-local Supabase verification)
 

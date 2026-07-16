@@ -4,7 +4,7 @@ Locked and Lean is a production-minded calorie, macro, body-weight, target, and
 history tracker designed for users in the Philippines.
 
 > **Current status: Phases 1-5 complete; Phase 6 MCP/OAuth endpoints are
-> hosted but the account-owner connection remains production-blocked.** The mobile app and
+> hosted for restricted allowlisted testing, while general production access remains blocked.** The mobile app and
 > Supabase stack support authenticated, preview-confirm food logging, barcode
 > review, history, targets, and weight/progress. Granular OAuth authorization,
 > live providers, physical-device evidence, and production hardening are not complete.
@@ -20,7 +20,7 @@ allowed.
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Implemented**       | Auth/onboarding, targets, encrypted native sessions, manual and barcode preview-confirm logging, saved foods, Today mutations, weight logging, Manila-safe Calendar, accessible Progress trends, RLS, transactional/idempotent writes, hosted Expo consent and MCP endpoints, and a fail-closed OAuth client/action policy. |
 | **Mocked / fixtures** | Barcode catalog records and security/provider test data are explicitly synthetic and blocked from production use. No fixture is represented as a live provider result.                                                                                                                                                      |
-| **Blocked**           | Granular production MCP authorization, OAuth-compatible general preview/revision RPCs, licensed/live Philippine provider data, hosted ChatGPT/MCP Inspector E2E, and physical-device/release evidence.                                                                                                                      |
+| **Blocked**           | Granular general-production MCP authorization, licensed/live Philippine provider data, final ChatGPT/MCP Inspector E2E, and physical-device/release evidence. The reviewed preview/revision/exact-confirmation flow is restricted to an explicitly allowlisted client.                                                      |
 | **Production-ready**  | Not yet. Release requires every item in the [production checklist](docs/PRODUCTION_CHECKLIST.md) to pass with hosted and device evidence.                                                                                                                                                                                   |
 
 ## Run the app locally
@@ -95,10 +95,10 @@ Architecture and data movement are documented in
 
 | Command               | Purpose                                                                                                                      |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check`       | Run formatting, Expo lint/typecheck, 158 Jest tests, 43 static contracts, the MCP package gate, and the prohibited-API scan. |
+| `npm run check`       | Run formatting, Expo lint/typecheck, 160 Jest tests, 44 static contracts, the MCP package gate, and the prohibited-API scan. |
 | `npm run check:mcp`   | Typecheck, test, and build the isolated Node MCP package.                                                                    |
 | `npm run db:reset`    | Rebuild local Supabase from all migrations.                                                                                  |
-| `npm run test:db`     | Run all 281 pgTAP database/RLS assertions.                                                                                   |
+| `npm run test:db`     | Run all 329 pgTAP database/RLS assertions.                                                                                   |
 | `npm run db:lint`     | Lint the application-owned `public` and `private` schemas.                                                                   |
 | `npm run db:advisors` | Run local Supabase security/performance advisors.                                                                            |
 
@@ -110,8 +110,9 @@ Architecture and data movement are documented in
 - Supabase OAuth supports identity scopes but not custom application scopes
   such as `food:write`; general production ChatGPT writes remain blocked by
   [ADR-0001](docs/DECISIONS/0001-supabase-oauth-custom-scopes.md).
-- General MCP preview/revision tools remain fail-closed until compatible
-  server RPCs and granular authorization exist.
+- The controlled allowlisted ChatGPT client can use the reviewed
+  preview/revision/exact-confirmation flow. This is not broad client access or
+  a claim that `openid` represents food-write consent.
 - ChatGPT linking, MCP Inspector, revocation/concurrency, physical-device,
   offline, accessibility, and full hosted E2E evidence are still required.
 

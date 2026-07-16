@@ -11,6 +11,8 @@ export const RPC_BY_ACTION: Readonly<Partial<Record<ProtectedAction, string>>> =
     get_day_history: "get_day_history",
     get_progress_summary: "get_progress_summary",
     get_weight_trend: "get_weight_trend",
+    preview_food_log: "create_chatgpt_food_log_preview",
+    revise_food_log_preview: "revise_chatgpt_food_log_preview",
     confirm_food_log: "confirm_food_log",
     record_weight: "record_weight",
     delete_food_entry: "delete_food_entry",

@@ -96,8 +96,9 @@ timezone assertions.
 - Supabase custom application scopes are unavailable; identity scopes do not
   grant food/calorie/weight tool permissions.
 - Hosted Supabase/OAuth/ChatGPT/MCP Inspector E2E is unverified.
-- General MCP preview/revision RPCs and some master-required tools are absent
-  and fail closed.
+- ChatGPT preview/revision RPCs are restricted to exact allowlisted OAuth
+  client/action pairs; general client access and some master-required tools
+  still fail closed.
 - Live/licensed Philippine provider data, physical-device camera/accessibility,
   offline cache, concurrency/load, revocation, TLS/proxy/rate-limit,
   chunked-body, and telemetry evidence remain outstanding.

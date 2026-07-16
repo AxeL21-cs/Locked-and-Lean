@@ -150,8 +150,8 @@ select is(
     where n.nspname = 'private'
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
-  22,
-  'authenticated can execute only the reviewed private bridge functions through fast logging'
+  24,
+  'authenticated can execute only the reviewed private bridge functions through fast logging and ChatGPT previewing'
 );
 
 select ok(
