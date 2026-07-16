@@ -7,7 +7,7 @@
 - Combined Phase 2/3 static run: passed 18/18 assertions on 2026-07-13.
 - Phase 3 independent database QA: passed 37/37 assertions after a clean local reset on 2026-07-13.
 - Full database directory: passed 143/143 assertions across four transactional files after the same reset. Supabase DB lint also passed with no schema errors.
-- Latest application gate (Phase 6): format, Expo lint, TypeScript, and the prohibited model API scan passed; Jest passed 26/26 suites and 158/158 tests. The combined static contract run passed 43/43 tests, and the independently configured MCP package passed formatting, typecheck, 30/30 tests, and build.
+- Latest application gate (2026-07-17): format, Expo lint, TypeScript, and the prohibited model API scan passed; Jest passed 29/29 suites and 173/173 tests. The combined static contract run passed 44/44 tests, and the independently configured MCP package passed formatting, typecheck, 43/43 tests, and build. Expo SDK 57 production exports passed for Android and 28 web routes; agent-browser verified the 412x915 sign-in/registration flow in both light and OLED-dark modes with no page errors or overlays.
 - Hosted integration and true simultaneous-request evidence remain unavailable without user-owned hosted configuration. Sequential pgTAP retries verify request-bound idempotency semantics but are not a substitute for a concurrency race.
 
 ## Prerequisites

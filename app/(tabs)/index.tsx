@@ -1,22 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { AsyncStatePanel } from "../../src/components/AsyncStatePanel";
+import { BrandMark } from "../../src/components/BrandMark";
 import { MacroRail } from "../../src/components/MacroRail";
 import { Screen } from "../../src/components/Screen";
-import { PRODUCT } from "../../src/design-system/product";
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../../src/design-system/tokens";
+import type { AppTheme } from "../../src/design-system/theme";
+import { useAppTheme } from "../../src/design-system/theme";
 import {
   mobileApi,
   type FoodEntry,
@@ -39,6 +33,8 @@ const mealLabels: Record<MealType, string> = {
 };
 export default function TodayScreen() {
   const router = useRouter();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { session } = useSession();
   const ownerId = session?.user.id;
   const client = useQueryClient();
@@ -109,14 +105,14 @@ export default function TodayScreen() {
   return (
     <Screen>
       <View style={styles.masthead}>
-        <View>
-          <Text style={styles.brand}>{PRODUCT.name}</Text>
+        <View style={styles.mastheadBrand}>
+          <BrandMark decorative showWordmark size={44} />
           <Text style={styles.kicker}>
-            {summary.localDate} · MANILA FIELD LOG
+            {summary.localDate} · MANILA PERFORMANCE LOG
           </Text>
         </View>
         <View style={styles.live}>
-          <Text style={styles.liveDot}>●</Text>
+          <View style={styles.liveDot} />
           <Text style={styles.liveText}>
             {showingCached ? "SAVED COPY" : "CONFIRMED"}
           </Text>
@@ -238,6 +234,7 @@ export default function TodayScreen() {
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Edit ${entry.name} through a new preview`}
+                      android_ripple={{ color: theme.colors.brandContainer }}
                       onPress={() =>
                         router.push({
                           pathname: "/manual-entry",
@@ -255,6 +252,7 @@ export default function TodayScreen() {
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Copy ${entry.name} as a new preview`}
+                      android_ripple={{ color: theme.colors.brandContainer }}
                       onPress={() =>
                         router.push({
                           pathname: "/manual-entry",
@@ -273,6 +271,7 @@ export default function TodayScreen() {
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Delete ${entry.name}`}
+                      android_ripple={{ color: theme.colors.dangerContainer }}
                       onPress={() => setPendingDelete(entry)}
                       style={styles.smallAction}
                     >
@@ -318,6 +317,8 @@ export default function TodayScreen() {
 }
 
 function TodayLoadingState({ cached }: { cached?: TodaySummary }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const target = cached?.calorieTarget;
   const consumed = cached?.caloriesConsumed ?? 0;
   const remaining = target == null ? null : target - consumed;
@@ -365,238 +366,272 @@ function TodayLoadingState({ cached }: { cached?: TodaySummary }) {
   );
 }
 
-const styles = StyleSheet.create({
-  masthead: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: spacing.md,
-  },
-  brand: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 25,
-    letterSpacing: -0.7,
-    lineHeight: 30,
-  },
-  kicker: {
-    color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 0.7,
-    lineHeight: 17,
-    marginTop: 2,
-  },
-  live: {
-    alignItems: "center",
-    borderColor: colors.rule,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: spacing.xs,
-    minHeight: 36,
-    paddingHorizontal: 10,
-  },
-  liveDot: { color: colors.calamansiDeep, fontSize: 11 },
-  liveText: {
-    color: colors.inkMuted,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.6,
-  },
-  energyCard: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.xl,
-    marginTop: spacing.xl,
-    overflow: "hidden",
-    padding: 24,
-    ...elevation.floating,
-  },
-  accentBar: {
-    backgroundColor: colors.calamansi,
-    borderRadius: radius.pill,
-    height: 5,
-    marginBottom: spacing.lg,
-    width: 48,
-  },
-  cardEyebrow: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 1,
-  },
-  remaining: {
-    color: colors.rice,
-    fontFamily: type.numeric,
-    fontSize: typeScale.hero,
-    letterSpacing: -2.5,
-    lineHeight: 64,
-    marginTop: spacing.sm,
-  },
-  remainingLabel: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 1.1,
-    marginBottom: spacing.xl,
-  },
-  macroGrid: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg },
-  section: { marginTop: spacing.xl },
-  sectionHead: {
-    alignItems: "flex-end",
-    borderBottomColor: colors.ink,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: spacing.sm,
-  },
-  sectionTitle: { color: colors.ink, fontFamily: type.display, fontSize: 22 },
-  sectionCount: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-  },
-  emptyMeal: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.bodySmall,
-    paddingVertical: spacing.md,
-  },
-  entry: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: 10,
-    padding: 16,
-    ...elevation.card,
-  },
-  entryTop: { flexDirection: "row", gap: spacing.md },
-  entryCopy: { flex: 1 },
-  entryName: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 16 },
-  entryMeta: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: typeScale.label,
-    lineHeight: 18,
-    marginTop: 3,
-  },
-  entryStatus: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.5,
-    marginTop: spacing.sm,
-  },
-  entryKcal: { color: colors.ink, fontFamily: type.numeric, fontSize: 18 },
-  entryUnit: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-  },
-  actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  smallAction: {
-    alignItems: "center",
-    borderColor: colors.rule,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 48,
-    minWidth: 68,
-    paddingHorizontal: spacing.md,
-  },
-  smallText: { color: colors.ink, fontFamily: type.label, fontSize: 13 },
-  deleteText: { color: colors.tomato, fontFamily: type.label, fontSize: 13 },
-  deletePanel: {
-    backgroundColor: colors.tomatoWash,
-    borderColor: colors.tomato,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-  },
-  deleteTitle: { color: colors.ink, fontFamily: type.display, fontSize: 23 },
-  deleteCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: spacing.xs,
-  },
-  deleteError: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-  updated: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    marginBottom: spacing.xl,
-    marginTop: spacing.xl,
-  },
-  loadingEyebrow: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1,
-    marginTop: spacing.xl,
-  },
-  loadingTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 34,
-    marginTop: spacing.sm,
-  },
-  loadingCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: spacing.xs,
-  },
-  loadingStats: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.xl,
-  },
-  loadingStat: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.md,
-    flex: 1,
-    minHeight: 88,
-    padding: spacing.md,
-  },
-  loadingValue: { color: colors.rice, fontFamily: type.numeric, fontSize: 22 },
-  loadingLabel: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: 10,
-    marginTop: spacing.sm,
-  },
-  skeleton: { gap: spacing.md, marginTop: spacing.xl },
-  skeletonWide: {
-    backgroundColor: colors.riceDark,
-    borderRadius: radius.sm,
-    height: 68,
-    opacity: 0.65,
-  },
-  skeletonShort: {
-    backgroundColor: colors.riceDark,
-    borderRadius: radius.sm,
-    height: 20,
-    opacity: 0.45,
-    width: "55%",
-  },
-  cachedNotice: {
-    backgroundColor: colors.calamansiWash,
-    borderRadius: radius.md,
-    color: colors.inkMuted,
-    fontFamily: type.bodyStrong,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.md,
-    padding: spacing.md,
-  },
-});
+const createStyles = ({
+  colors,
+  elevation,
+  isDark,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    masthead: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      justifyContent: "space-between",
+      paddingTop: spacing.md,
+    },
+    mastheadBrand: { flex: 1, minWidth: 0 },
+    kicker: {
+      color: colors.textFaint,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.7,
+      lineHeight: 17,
+      marginTop: 2,
+    },
+    live: {
+      alignItems: "center",
+      borderColor: colors.border,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.xs,
+      minHeight: 36,
+      paddingHorizontal: 10,
+    },
+    liveDot: {
+      backgroundColor: colors.brand,
+      borderRadius: radius.pill,
+      height: 8,
+      width: 8,
+    },
+    liveText: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.6,
+    },
+    energyCard: {
+      backgroundColor: isDark ? colors.surfaceRaised : colors.text,
+      borderRadius: radius.xl,
+      marginTop: spacing.xl,
+      overflow: "hidden",
+      padding: 24,
+      ...elevation.floating,
+    },
+    accentBar: {
+      backgroundColor: colors.brand,
+      borderRadius: radius.pill,
+      height: 5,
+      marginBottom: spacing.lg,
+      width: 48,
+    },
+    cardEyebrow: {
+      color: colors.brand,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 1,
+    },
+    remaining: {
+      color: isDark ? colors.text : colors.background,
+      fontFamily: type.numeric,
+      fontSize: typeScale.hero,
+      letterSpacing: -2.5,
+      lineHeight: 64,
+      marginTop: spacing.sm,
+    },
+    remainingLabel: {
+      color: colors.brand,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 1.1,
+      marginBottom: spacing.xl,
+    },
+    macroGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
+    section: { marginTop: spacing.xl },
+    sectionHead: {
+      alignItems: "flex-end",
+      borderBottomColor: colors.borderStrong,
+      borderBottomWidth: 1,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingBottom: spacing.sm,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 22,
+    },
+    sectionCount: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+    },
+    emptyMeal: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      paddingVertical: spacing.md,
+    },
+    entry: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: 10,
+      padding: 16,
+      ...elevation.card,
+    },
+    entryTop: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+    entryCopy: { flex: 1 },
+    entryName: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: 16,
+    },
+    entryMeta: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.label,
+      lineHeight: 18,
+      marginTop: 3,
+    },
+    entryStatus: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.5,
+      marginTop: spacing.sm,
+    },
+    entryKcal: { color: colors.text, fontFamily: type.numeric, fontSize: 18 },
+    entryUnit: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+    },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    smallAction: {
+      alignItems: "center",
+      borderColor: colors.border,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 48,
+      minWidth: 68,
+      paddingHorizontal: spacing.md,
+    },
+    smallText: { color: colors.text, fontFamily: type.label, fontSize: 13 },
+    deleteText: { color: colors.danger, fontFamily: type.label, fontSize: 13 },
+    deletePanel: {
+      backgroundColor: colors.dangerContainer,
+      borderColor: colors.danger,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+    },
+    deleteTitle: { color: colors.text, fontFamily: type.display, fontSize: 23 },
+    deleteCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: spacing.xs,
+    },
+    deleteError: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+    updated: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginBottom: spacing.xl,
+      marginTop: spacing.xl,
+    },
+    loadingEyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1,
+      marginTop: spacing.xl,
+    },
+    loadingTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 34,
+      marginTop: spacing.sm,
+    },
+    loadingCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 14,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+    },
+    loadingStats: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginTop: spacing.xl,
+    },
+    loadingStat: {
+      backgroundColor: isDark ? colors.surfaceRaised : colors.text,
+      borderRadius: radius.md,
+      flex: 1,
+      minWidth: 92,
+      minHeight: 88,
+      padding: spacing.md,
+    },
+    loadingValue: {
+      color: isDark ? colors.text : colors.background,
+      fontFamily: type.numeric,
+      fontSize: 22,
+    },
+    loadingLabel: {
+      color: colors.brand,
+      fontFamily: type.label,
+      fontSize: 10,
+      marginTop: spacing.sm,
+    },
+    skeleton: { gap: spacing.md, marginTop: spacing.xl },
+    skeletonWide: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.sm,
+      height: 68,
+      opacity: 0.65,
+    },
+    skeletonShort: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.sm,
+      height: 20,
+      opacity: 0.45,
+      width: "55%",
+    },
+    cachedNotice: {
+      backgroundColor: colors.brandContainer,
+      borderRadius: radius.md,
+      color: colors.textMuted,
+      fontFamily: type.bodyStrong,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.md,
+      padding: spacing.md,
+    },
+  });

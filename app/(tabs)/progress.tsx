@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
@@ -9,14 +9,7 @@ import { AsyncStatePanel } from "../../src/components/AsyncStatePanel";
 import { Field } from "../../src/components/Field";
 import { Screen } from "../../src/components/Screen";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../../src/design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../src/design-system/theme";
 import {
   addLocalDateDays,
   buildWeek,
@@ -63,6 +56,8 @@ const key = () => globalThis.crypto?.randomUUID?.() ?? `weight-${Date.now()}`;
 
 export default function ProgressScreen() {
   const client = useQueryClient();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [rangeDays, setRangeDays] = useState<ProgressRangeDays>(30);
   const confirmationKey = useRef(key());
   const endDate = localDateInManila(new Date());
@@ -216,34 +211,44 @@ export default function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  form: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.xl,
-    marginTop: spacing.xl,
-    padding: 22,
-    ...elevation.floating,
-  },
-  formTitle: {
-    color: colors.rice,
-    fontFamily: type.display,
-    fontSize: typeScale.headline,
-  },
-  formCopy: {
-    color: colors.riceDark,
-    fontFamily: type.body,
-    fontSize: typeScale.bodySmall,
-    lineHeight: 21,
-    marginTop: spacing.xs,
-  },
-  error: {
-    color: "#FFC4B7",
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-  success: {
-    color: colors.calamansi,
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-});
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    form: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: 22,
+      ...elevation.floating,
+    },
+    formTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.headline,
+    },
+    formCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+    success: {
+      color: colors.success,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+  });

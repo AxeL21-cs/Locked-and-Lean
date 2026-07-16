@@ -1,14 +1,9 @@
 import { SymbolView } from "expo-symbols";
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../../design-system/tokens";
+import type { AppTheme } from "../../design-system/theme";
+import { useAppTheme } from "../../design-system/theme";
 
 export const ADD_ACTIONS = [
   {
@@ -46,9 +41,9 @@ export const ADD_ACTIONS = [
       web: "chat",
     },
     label: "Log with ChatGPT",
-    meta: "Phase 6 · external handoff planned",
+    meta: "External companion · preview still required",
     demoMessage:
-      "ChatGPT interpretation is external; this app never calls OpenAI model APIs.",
+      "Use Locked and Lean from ChatGPT for interpretation. The phone app never calls OpenAI model APIs.",
   },
 ] as const;
 
@@ -59,108 +54,126 @@ export function AddActionList({
 }: {
   onSelect: (action: AddAction) => void;
 }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <View style={styles.list}>
-      {ADD_ACTIONS.map((action, index) => (
-        <Pressable
-          accessibilityHint={action.demoMessage}
-          accessibilityLabel={`${action.label}. ${action.meta}`}
-          accessibilityRole="button"
-          key={action.label}
-          onPress={() => onSelect(action)}
-          style={({ pressed }) => [
-            styles.row,
-            index === ADD_ACTIONS.length - 1 && styles.chatRow,
-            pressed && styles.pressed,
-          ]}
-        >
-          <View
-            style={[
-              styles.glyphBox,
-              index === ADD_ACTIONS.length - 1 && styles.chatGlyphBox,
+      {ADD_ACTIONS.map((action, index) => {
+        const companion = index === ADD_ACTIONS.length - 1;
+        return (
+          <Pressable
+            accessibilityHint={action.demoMessage}
+            accessibilityLabel={`${action.label}. ${action.meta}`}
+            accessibilityRole="button"
+            android_ripple={{ color: theme.colors.brandContainer }}
+            key={action.label}
+            onPress={() => onSelect(action)}
+            style={({ pressed }) => [
+              styles.row,
+              companion && styles.companionRow,
+              pressed && styles.pressed,
             ]}
           >
+            <View
+              style={[styles.glyphBox, companion && styles.companionGlyphBox]}
+            >
+              <SymbolView
+                name={action.glyph}
+                size={25}
+                tintColor={
+                  companion ? theme.colors.brandStrong : theme.colors.text
+                }
+              />
+            </View>
+            <View style={styles.copy}>
+              <Text style={styles.index}>
+                {String(index + 1).padStart(2, "0")}
+              </Text>
+              <Text style={styles.label}>{action.label}</Text>
+              <Text style={styles.meta}>{action.meta}</Text>
+            </View>
             <SymbolView
-              name={action.glyph}
-              size={25}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+              name={{
+                android: "chevron_right",
+                ios: "chevron.right",
+                web: "chevron_right",
+              }}
+              size={23}
               tintColor={
-                index === ADD_ACTIONS.length - 1 ? colors.calamansi : colors.ink
+                companion ? theme.colors.brandStrong : theme.colors.textFaint
               }
             />
-          </View>
-          <View style={styles.copy}>
-            <Text
-              style={[
-                styles.label,
-                index === ADD_ACTIONS.length - 1 && styles.chatLabel,
-              ]}
-            >
-              {action.label}
-            </Text>
-            <Text
-              style={[
-                styles.meta,
-                index === ADD_ACTIONS.length - 1 && styles.chatMeta,
-              ]}
-            >
-              {action.meta}
-            </Text>
-          </View>
-          <SymbolView
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-            name={{
-              android: "chevron_right",
-              ios: "chevron.right",
-              web: "chevron_right",
-            }}
-            size={23}
-            tintColor={
-              index === ADD_ACTIONS.length - 1
-                ? colors.riceDark
-                : colors.inkFaint
-            }
-          />
-        </Pressable>
-      ))}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  list: { gap: 12, marginTop: spacing.lg },
-  row: {
-    alignItems: "center",
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    flexDirection: "row",
-    minHeight: 88,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    ...elevation.card,
-  },
-  chatRow: { backgroundColor: colors.ink, borderColor: colors.ink },
-  pressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
-  glyphBox: {
-    alignItems: "center",
-    backgroundColor: colors.calamansiWash,
-    borderRadius: radius.md,
-    height: 48,
-    justifyContent: "center",
-    width: 48,
-  },
-  chatGlyphBox: { backgroundColor: colors.inkRule },
-  copy: { flex: 1, marginLeft: spacing.md },
-  label: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 18 },
-  chatLabel: { color: colors.rice },
-  meta: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.label,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  chatMeta: { color: colors.riceDark },
-});
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    list: { gap: spacing.sm, marginTop: spacing.md },
+    row: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      minHeight: 92,
+      overflow: "hidden",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      ...elevation.card,
+    },
+    companionRow: {
+      backgroundColor: colors.brandContainer,
+      borderColor: colors.brandStrong,
+    },
+    pressed: { opacity: 0.76, transform: [{ scale: 0.99 }] },
+    glyphBox: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      height: 48,
+      justifyContent: "center",
+      width: 48,
+    },
+    companionGlyphBox: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.brandStrong,
+    },
+    copy: { flex: 1, marginLeft: spacing.md, minWidth: 0 },
+    index: {
+      color: colors.brandStrong,
+      fontFamily: type.numeric,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.7,
+    },
+    label: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: 17,
+      lineHeight: 23,
+      marginTop: 1,
+    },
+    meta: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.label,
+      lineHeight: 19,
+      marginTop: 3,
+    },
+  });

@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../components/ActionButton";
 import { AsyncStatePanel } from "../../components/AsyncStatePanel";
+import { BrandMark } from "../../components/BrandMark";
 import { Screen } from "../../components/Screen";
-import { PRODUCT } from "../../design-system/product";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import type { OAuthConsentDetails } from "../../services/supabase";
 import { redirectDisplayLabel } from "./authorization";
 import type { OAuthConsentGateway } from "./types";
@@ -36,6 +36,7 @@ const SCOPE_COPY = {
 } as const;
 
 function ConsentCard({ details }: { details: OAuthConsentDetails }) {
+  const styles = useOAuthStyles();
   return (
     <>
       <View style={styles.passport}>
@@ -113,6 +114,7 @@ function ConsentCard({ details }: { details: OAuthConsentDetails }) {
 }
 
 export function OAuthConsentBlocked({ reason }: { reason: string }) {
+  const styles = useOAuthStyles();
   return (
     <Screen>
       <View style={styles.blockedStamp}>
@@ -157,6 +159,7 @@ export function OAuthConsentFlow({
   onReauthenticate: () => void;
   onReturn: (redirectUrl: string) => Promise<void>;
 }) {
+  const styles = useOAuthStyles();
   const [decision, setDecision] = useState<"approve" | "deny">();
   const [decisionError, setDecisionError] = useState<unknown>();
   const [redirectUrl, setRedirectUrl] = useState<string>();
@@ -315,7 +318,7 @@ export function OAuthConsentFlow({
   return (
     <Screen>
       <View style={styles.brandRow}>
-        <Text style={styles.brand}>{PRODUCT.name}</Text>
+        <BrandMark size={56} showWordmark />
         <Text style={styles.brandMeta}>OAUTH 2.1 CONSENT</Text>
       </View>
       <ConsentCard details={details} />
@@ -350,223 +353,245 @@ export function OAuthConsentFlow({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  brandRow: {
-    alignItems: "flex-end",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: spacing.md,
-  },
-  brand: { color: colors.ink, fontFamily: type.display, fontSize: 27 },
-  brandMeta: {
-    color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1.3,
-  },
-  passport: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.xl,
-    marginTop: spacing.xl,
-    overflow: "hidden",
-    padding: spacing.xl,
-  },
-  passportTop: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  clientMark: {
-    alignItems: "center",
-    backgroundColor: colors.calamansi,
-    borderRadius: radius.pill,
-    height: 48,
-    justifyContent: "center",
-    width: 48,
-  },
-  clientMarkText: { color: colors.ink, fontFamily: type.display, fontSize: 21 },
-  eyebrow: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1.5,
-  },
-  title: {
-    color: colors.rice,
-    fontFamily: type.display,
-    fontSize: 29,
-    lineHeight: 34,
-    marginTop: 4,
-  },
-  identityRow: {
-    borderTopColor: colors.inkRule,
-    borderTopWidth: 1,
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  identityLabel: {
-    color: colors.riceDark,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1.4,
-  },
-  identityValue: {
-    color: colors.rice,
-    fontFamily: type.bodyStrong,
-    fontSize: 12,
-    marginTop: 3,
-  },
-  verified: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.7,
-    marginTop: spacing.sm,
-  },
-  clientId: {
-    color: colors.riceDark,
-    fontFamily: type.body,
-    fontSize: 11,
-    marginTop: spacing.lg,
-  },
-  sectionTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 24,
-    marginTop: spacing.xl,
-  },
-  scopeList: { gap: spacing.sm, marginTop: spacing.md },
-  scopeRow: {
-    alignItems: "flex-start",
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: spacing.md,
-    padding: spacing.lg,
-  },
-  scopeSymbol: {
-    color: colors.calamansiDeep,
-    fontFamily: type.display,
-    fontSize: 20,
-    textAlign: "center",
-    width: 28,
-  },
-  scopeTitle: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 14 },
-  scopeDescription: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: 2,
-  },
-  scopeCode: {
-    color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    marginTop: spacing.sm,
-  },
-  boundaryCard: {
-    backgroundColor: colors.skyWash,
-    borderColor: colors.inkRule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-  },
-  boundaryLabel: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1.4,
-  },
-  boundaryTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 22,
-    marginTop: spacing.xs,
-  },
-  boundaryCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.xs,
-  },
-  blockedCard: {
-    backgroundColor: colors.tomatoWash,
-    borderColor: colors.tomato,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-  },
-  blockedTitle: { color: colors.ink, fontFamily: type.display, fontSize: 22 },
-  blockedReason: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    fontSize: 11,
-    marginTop: spacing.sm,
-  },
-  blockedCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.sm,
-  },
-  error: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.md,
-  },
-  footnote: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 15,
-    marginBottom: spacing.xl,
-    marginTop: spacing.lg,
-  },
-  returningText: {
-    color: colors.calamansiDeep,
-    fontFamily: type.bodyStrong,
-    fontSize: 12,
-    marginTop: spacing.md,
-  },
-  blockedStamp: {
-    alignSelf: "flex-start",
-    borderColor: colors.tomato,
-    borderRadius: radius.sm,
-    borderWidth: 2,
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    transform: [{ rotate: "-1deg" }],
-  },
-  blockedStampText: {
-    color: colors.tomato,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1.2,
-  },
-  blockedPageTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 38,
-    lineHeight: 43,
-    marginTop: spacing.xl,
-  },
-  blockedPageCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: spacing.sm,
-  },
-});
+function useOAuthStyles() {
+  const theme = useAppTheme();
+  return useMemo(() => createStyles(theme), [theme]);
+}
+
+const createStyles = ({ colors, radius, spacing, type, typeScale }: AppTheme) =>
+  StyleSheet.create({
+    flex: { flex: 1 },
+    brandRow: {
+      alignItems: "flex-end",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+      justifyContent: "space-between",
+      marginTop: spacing.md,
+    },
+    brandMeta: {
+      color: colors.textFaint,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1.3,
+    },
+    passport: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      overflow: "hidden",
+      padding: spacing.xl,
+    },
+    passportTop: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    clientMark: {
+      alignItems: "center",
+      backgroundColor: colors.brand,
+      borderRadius: radius.pill,
+      height: 48,
+      justifyContent: "center",
+      width: 48,
+    },
+    clientMarkText: {
+      color: colors.onBrand,
+      fontFamily: type.display,
+      fontSize: 21,
+    },
+    eyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1.5,
+    },
+    title: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 29,
+      lineHeight: 34,
+      marginTop: 4,
+    },
+    identityRow: {
+      borderTopColor: colors.border,
+      borderTopWidth: 1,
+      marginTop: spacing.lg,
+      paddingTop: spacing.md,
+    },
+    identityLabel: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1.4,
+    },
+    identityValue: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: 12,
+      marginTop: 3,
+    },
+    verified: {
+      color: colors.success,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.7,
+      marginTop: spacing.sm,
+    },
+    clientId: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: 11,
+      marginTop: spacing.lg,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 24,
+      marginTop: spacing.xl,
+    },
+    scopeList: { gap: spacing.sm, marginTop: spacing.md },
+    scopeRow: {
+      alignItems: "flex-start",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.md,
+      padding: spacing.lg,
+    },
+    scopeSymbol: {
+      color: colors.brandStrong,
+      fontFamily: type.display,
+      fontSize: 20,
+      textAlign: "center",
+      width: 28,
+    },
+    scopeTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.bodySmall,
+    },
+    scopeDescription: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 11,
+      lineHeight: 17,
+      marginTop: 2,
+    },
+    scopeCode: {
+      color: colors.textFaint,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.6,
+      marginTop: spacing.sm,
+    },
+    boundaryCard: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+    },
+    boundaryLabel: {
+      color: colors.info,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1.4,
+    },
+    boundaryTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 22,
+      marginTop: spacing.xs,
+    },
+    boundaryCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.xs,
+    },
+    blockedCard: {
+      backgroundColor: colors.dangerContainer,
+      borderColor: colors.danger,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+    },
+    blockedTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 22,
+    },
+    blockedReason: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      fontSize: 11,
+      marginTop: spacing.sm,
+    },
+    blockedCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.sm,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.md,
+    },
+    footnote: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: 11,
+      lineHeight: 15,
+      marginBottom: spacing.xl,
+      marginTop: spacing.lg,
+    },
+    returningText: {
+      color: colors.info,
+      fontFamily: type.bodyStrong,
+      fontSize: 12,
+      marginTop: spacing.md,
+    },
+    blockedStamp: {
+      alignSelf: "flex-start",
+      borderColor: colors.danger,
+      borderRadius: radius.sm,
+      borderWidth: 2,
+      marginTop: spacing.xl,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      transform: [{ rotate: "-1deg" }],
+    },
+    blockedStampText: {
+      color: colors.danger,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1.2,
+    },
+    blockedPageTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 38,
+      lineHeight: 43,
+      marginTop: spacing.xl,
+    },
+    blockedPageCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 14,
+      lineHeight: 21,
+      marginTop: spacing.sm,
+    },
+  });

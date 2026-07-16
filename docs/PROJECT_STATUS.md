@@ -58,6 +58,8 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Reproduced the remaining reconnect failure through the connector itself. Supabase authorization-code/PKCE, token exchange, refresh-token issuance, and the access-token hook all succeeded, but the production MCP health surface reported `missing_client_action_policy`; this forced every protected request through the fail-closed verifier before repository access. Restored the exact reviewed client/action allowlist for calendar reads plus preview, revision, and exact confirmation.
 - Corrected the host authorization handshake without broadening accepted input. The exact unauthenticated wildcard/octet-stream probe now receives HTTP 401 with `resource_metadata` and `scope="openid"` before media validation, while authenticated binary and unrelated XML remain HTTP 415. Missing credentials omit `error` fields; malformed or rejected credentials still use safe `invalid_token` challenges.
 - Deployed the combined fix as `dpl_DzYYDXCnN5E3HVPdbtdAef1QmCbQ`. Production health now reports authentication and repository both configured, the canonical handshake probe returns the expected Bearer challenge instead of HTTP 415, and a real approved `get_calendar_history` invocation completed through the connected Locked and Lean plugin without a reconnect prompt.
+- Integrated the exact user-supplied 1254px light and dark padlock/fork/leaf artwork, added system-driven light/dark theming, and refreshed the launcher, adaptive icon, favicon, and dual splash configuration. The in-app `BrandMark` switches artwork automatically while the Android launcher uses the dark navy/lime canonical icon.
+- Completed the Android 0.4.0 (versionCode 4) performance-journal redesign across Today, Calendar, Add, Progress, Profile, auth, onboarding, barcode, saved foods, offline/sync, preview, OAuth, and error states. Semantic colors, 48dp targets, Android ripples, scalable type, TalkBack state labels, and non-color-only chart/status meanings were added without changing RLS, idempotency, offline conflict handling, or exact preview-confirm writes.
 
 ## Blocked work
 
@@ -66,7 +68,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 
 ## Test status
 
-- `npm run check`: passed (Prettier, Expo lint with zero warnings, TypeScript, 27 Jest suites / 160 tests, 44 static contract checks, 36 MCP tests/build, and prohibited OpenAI model API scan).
+- `npm run check`: passed on 2026-07-17 (Prettier, Expo lint with zero warnings, TypeScript, 29 Jest suites / 173 tests, 44 static contract checks, 43 MCP tests/build, and prohibited OpenAI model API scan).
 - Expo public config resolution: passed.
 - Credentials-free Expo web production export: passed (26 routes, including `/barcode-scan`).
 - Browser verification at 390x844: passed for Today, Calendar, Add, Progress, and Profile; no error overlay or browser console errors; Add safe-inactive feedback verified.
@@ -106,6 +108,10 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Post-authorization-handshake MCP gate: format, typecheck, 43/43 Node tests, and production build passed. The repository static/security suite passed 44/44, and the prohibited OpenAI model API scan passed.
 - Hosted verification: migration history contains `20260716110100`; all four preview/revision wrappers and bridges have the expected security modes and grants; the canonical production MCP alias exposes 12 tools with the complete preview/revision schemas; and an unauthenticated preview returns the OAuth challenge before repository access.
 - Hosted reconnect verification: coarse health changed from `locked` to `degraded` after the reviewed allowlist was restored; authentication and repository are both configured. The live wildcard/octet-stream probe returns HTTP 401 with the canonical protected-resource challenge, and the approved connector calendar read returned one owner-scoped Manila day without reauthentication.
+- Android 0.4.0 configuration resolution passed with Expo SDK 57, automatic light/dark appearance, separate light/dark splash art, versionCode 4, predictive back gestures, the existing production package ID, and only the intended public Supabase environment values.
+- Android and web production exports passed. The Android Hermes bundle includes both supplied brand assets; the web export produced all 28 static routes.
+- Phone-size visual verification passed at 412x915 in light and OLED-dark modes: the correct artwork and canvas colors rendered, the sign-in and registration routes were meaningful and navigable, and agent-browser found no error overlay or browser errors.
+- The mobile-design audit reported eight heuristic touch-size findings. Manual inspection confirmed they are text line heights, chart markers, skeleton bars, or visual icon containers inside 48-82dp controls; the actual interactive targets in those locations remain at least 48dp.
 
 ## Security status
 
@@ -129,6 +135,6 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 ## Next actions
 
 1. Run a real post-expiry refresh and MCP Inspector test through the currently approved ChatGPT connector; do not recreate it unless necessary.
-2. Install the Android 0.3.0 (versionCode 3) production APK over the existing app; SQLite is a native dependency, so the old APK cannot receive this feature as JavaScript alone.
+2. Install the Android 0.4.0 (versionCode 4) production APK over the existing app and verify the light/dark splash, launcher mask, Today/Add flows, and offline reconnect on the physical phone.
 3. Connect the new saved-meal/quick-suggestion RPCs to the mobile adapter for cloud favorites, multi-item saved meals, and a wider recent-food list.
 4. Complete physical low-end Android, TalkBack, 200% font, offline/reconnect, concurrency, TLS/proxy/rate-limit, revocation, and telemetry verification before production.

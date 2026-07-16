@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import * as Haptics from "expo-haptics";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AsyncStatePanel } from "../../components/AsyncStatePanel";
 import { Screen } from "../../components/Screen";
 import { ScreenHeader } from "../../components/ScreenHeader";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import { mobileApi, type SavedFood } from "../../services/supabase";
 import { useSession } from "../auth/SessionProvider";
 import {
@@ -21,6 +21,8 @@ import {
 
 export function SavedFoodsList() {
   const router = useRouter();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { session } = useSession();
   const ownerId = session?.user.id;
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -116,6 +118,7 @@ export function SavedFoodsList() {
             <Pressable
               accessibilityLabel={`${favorites.has(food.id) ? "Remove" : "Add"} ${food.foodName} ${favorites.has(food.id) ? "from" : "to"} device favorites`}
               accessibilityRole="button"
+              accessibilityState={{ selected: favorites.has(food.id) }}
               onPress={async () => {
                 if (!ownerId) return;
                 const next = !favorites.has(food.id);
@@ -131,7 +134,9 @@ export function SavedFoodsList() {
               style={styles.favoriteButton}
             >
               <Text style={styles.favoriteText}>
-                {favorites.has(food.id) ? "★" : "☆"}
+                {favorites.has(food.id)
+                  ? "★ Device favorite"
+                  : "☆ Add to favorites"}
               </Text>
             </Pressable>
           </View>
@@ -140,46 +145,69 @@ export function SavedFoodsList() {
     </Screen>
   );
 }
-const styles = StyleSheet.create({
-  list: { gap: spacing.md, marginTop: spacing.xl },
-  favoriteWrap: { position: "relative" },
-  row: {
-    alignItems: "center",
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    flexDirection: "row",
-    minHeight: 78,
-    padding: spacing.lg,
-  },
-  pressed: { opacity: 0.7 },
-  copy: { flex: 1 },
-  name: { color: colors.ink, fontFamily: type.display, fontSize: 20 },
-  meta: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: 3,
-  },
-  kcal: { color: colors.ink, fontFamily: type.label, fontSize: 13 },
-  favoriteButton: {
-    alignItems: "center",
-    bottom: 0,
-    justifyContent: "center",
-    minHeight: 48,
-    minWidth: 48,
-    position: "absolute",
-    right: 4,
-    top: 0,
-  },
-  favoriteText: { color: colors.calamansiDeep, fontSize: 24 },
-  deviceNote: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.md,
-  },
-});
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    list: { gap: spacing.md, marginTop: spacing.xl },
+    favoriteWrap: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      overflow: "hidden",
+      ...elevation.card,
+    },
+    row: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      minHeight: 78,
+      padding: spacing.lg,
+    },
+    pressed: { opacity: 0.7 },
+    copy: { flex: 1 },
+    name: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.title,
+    },
+    meta: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: 3,
+    },
+    kcal: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: typeScale.label,
+    },
+    favoriteButton: {
+      alignItems: "center",
+      borderTopColor: colors.border,
+      borderTopWidth: 1,
+      justifyContent: "center",
+      minHeight: 48,
+      paddingHorizontal: spacing.lg,
+    },
+    favoriteText: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.label,
+    },
+    deviceNote: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.md,
+    },
+  });

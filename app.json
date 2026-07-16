@@ -3,38 +3,41 @@
     "name": "Locked and Lean",
     "slug": "locked-and-lean",
     "scheme": "lockedandlean",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
-    "icon": "./assets/brand/locked-and-lean-app-icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/brand/locked-and-lean-brand-dark.png",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lockedandlean.app"
     },
     "android": {
       "package": "com.lockedandlean.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
-        "backgroundColor": "#F5F0E6",
-        "foregroundImage": "./assets/brand/locked-and-lean-mark.png",
-        "monochromeImage": "./assets/brand/locked-and-lean-mark-ink.png"
+        "backgroundColor": "#000000",
+        "foregroundImage": "./assets/brand/locked-and-lean-brand-dark.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/brand/locked-and-lean-app-icon.png"
+      "favicon": "./assets/brand/locked-and-lean-brand-dark.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/brand/locked-and-lean-mark.png",
+          "image": "./assets/brand/locked-and-lean-brand-light.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#F5F0E6"
+          "backgroundColor": "#000000",
+          "dark": {
+            "image": "./assets/brand/locked-and-lean-brand-dark.png",
+            "backgroundColor": "#000000"
+          }
         }
       ],
       "expo-secure-store",

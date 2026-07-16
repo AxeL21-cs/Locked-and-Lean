@@ -1,40 +1,39 @@
 import { useMutation } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
+import { BrandMark } from "../../src/components/BrandMark";
 import { Screen } from "../../src/components/Screen";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { PRODUCT } from "../../src/design-system/product";
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../../src/design-system/tokens";
+import type { AppTheme } from "../../src/design-system/theme";
+import { useAppTheme } from "../../src/design-system/theme";
 import { useSession } from "../../src/features/auth/SessionProvider";
 import { mobileApi } from "../../src/services/supabase";
 
 export default function ProfileScreen() {
   const { session } = useSession();
   const router = useRouter();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const logout = useMutation({ mutationFn: () => mobileApi.logout() });
+
   return (
     <Screen>
       <ScreenHeader
-        eyebrow="Account · private"
-        title="Profile"
-        annotation="Targets, preferences, and session controls."
+        eyebrow="Private account · Manila"
+        title="Your setup"
+        annotation="Targets, appearance, and session controls."
       />
+
       <View style={styles.identity}>
-        <Text style={styles.monogram}>
-          {(session?.user.email?.[0] ?? "L").toUpperCase()}
-        </Text>
+        <BrandMark decorative size={56} />
         <View style={styles.identityCopy}>
-          <Text style={styles.name}>
+          <Text style={styles.accountLabel}>SIGNED-IN ACCOUNT</Text>
+          <Text selectable style={styles.name}>
             {session?.user.email ?? "Signed-in account"}
           </Text>
           <Text style={styles.meta}>
@@ -42,12 +41,20 @@ export default function ProfileScreen() {
           </Text>
         </View>
       </View>
+
+      <View style={styles.sectionHead}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>
+          Preferences
+        </Text>
+        <Text style={styles.sectionIndex}>01</Text>
+      </View>
+
       <View style={styles.card}>
-        <Text style={styles.cardIndex}>01</Text>
+        <Text style={styles.cardEyebrow}>DAILY BASELINE</Text>
         <Text style={styles.cardTitle}>Profile and targets</Text>
         <Text style={styles.cardBody}>
-          Update adult formula inputs and review a newly proposed target before
-          activation.
+          Update your adult formula inputs, then review a newly proposed target
+          before activating it.
         </Text>
         <ActionButton
           label="Review baseline details"
@@ -55,13 +62,40 @@ export default function ProfileScreen() {
           tone="secondary"
         />
       </View>
+
+      <View
+        accessible
+        accessibilityLabel={`Appearance follows Android system settings. Current appearance is ${theme.colorScheme} mode.`}
+        style={styles.appearance}
+      >
+        <View style={styles.appearanceCopy}>
+          <Text style={styles.cardEyebrow}>APPEARANCE</Text>
+          <Text style={styles.appearanceTitle}>Follows Android</Text>
+          <Text style={styles.cardBody}>
+            Locked and Lean matches your phone’s system light or dark theme.
+            Change it in Android Settings › Display › Dark theme.
+          </Text>
+        </View>
+        <View style={styles.systemBadge}>
+          <View style={styles.systemDot} />
+          <Text style={styles.systemText}>
+            {theme.colorScheme.toUpperCase()}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.sectionHead}>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>
+          Account safety
+        </Text>
+        <Text style={styles.sectionIndex}>02</Text>
+      </View>
+
       <View style={styles.card}>
-        <Text style={styles.cardIndex}>02</Text>
-        <Text style={styles.cardTitle}>Account safety</Text>
+        <Text style={styles.cardTitle}>Session controls</Text>
         <Text style={styles.cardBody}>
-          Signing out ends the local session. Account deletion is not offered
-          yet because the coordinated storage cleanup and export workflow is not
-          implemented.
+          Signing out ends the local session. Account deletion stays unavailable
+          until coordinated export and storage cleanup are implemented.
         </Text>
         {logout.error ? (
           <Text accessibilityRole="alert" style={styles.error}>
@@ -72,102 +106,188 @@ export default function ProfileScreen() {
           busy={logout.isPending}
           label="Sign out"
           onPress={() => logout.mutate()}
+          tone="secondary"
         />
       </View>
+
       <View style={styles.ruleCard}>
+        <Text style={styles.ruleLabel}>THE LOCKED RULE</Text>
         <Text style={styles.ruleTitle}>
-          Interpret first · verify second · log third
+          Interpret first. Verify second. Log third.
         </Text>
         <Text style={styles.ruleBody}>
-          Every food source must become a complete current preview. Only your
+          Every food source becomes a complete current preview. Only your
           explicit confirmation of that exact revision can make it permanent.
         </Text>
       </View>
     </Screen>
   );
 }
-const styles = StyleSheet.create({
-  identity: {
-    alignItems: "center",
-    borderBottomColor: colors.rule,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.xl,
-    paddingBottom: spacing.xl,
-  },
-  monogram: {
-    backgroundColor: colors.calamansi,
-    borderColor: colors.ink,
-    borderRadius: 28,
-    borderWidth: 1,
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 20,
-    overflow: "hidden",
-    paddingVertical: 15,
-    textAlign: "center",
-    width: 56,
-  },
-  identityCopy: { flex: 1 },
-  name: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 16 },
-  meta: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: typeScale.label,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  card: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-    ...elevation.card,
-  },
-  cardIndex: {
-    color: colors.tomato,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 0.7,
-  },
-  cardTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: typeScale.title,
-    marginTop: spacing.xs,
-  },
-  cardBody: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: typeScale.bodySmall,
-    lineHeight: 21,
-    marginTop: spacing.xs,
-  },
-  error: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-  ruleCard: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.lg,
-    marginBottom: spacing.xl,
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-  },
-  ruleTitle: {
-    color: colors.calamansi,
-    fontFamily: type.display,
-    fontSize: typeScale.title,
-  },
-  ruleBody: {
-    color: colors.riceDark,
-    fontFamily: type.body,
-    fontSize: typeScale.bodySmall,
-    lineHeight: 21,
-    marginTop: spacing.xs,
-  },
-});
+
+const createStyles = ({
+  colors,
+  elevation,
+  isDark,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    identity: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.md,
+      marginTop: spacing.xl,
+      padding: spacing.md,
+      ...elevation.card,
+    },
+    identityCopy: { flex: 1, minWidth: 0 },
+    accountLabel: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+    },
+    name: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+      lineHeight: 23,
+      marginTop: 3,
+    },
+    meta: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.label,
+      lineHeight: 19,
+      marginTop: 4,
+    },
+    sectionHead: {
+      alignItems: "flex-end",
+      borderBottomColor: colors.borderStrong,
+      borderBottomWidth: 1,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: spacing.xl,
+      paddingBottom: spacing.sm,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.title,
+      lineHeight: 28,
+    },
+    sectionIndex: {
+      color: colors.brandStrong,
+      fontFamily: type.numeric,
+      fontSize: typeScale.label,
+      letterSpacing: 0.7,
+    },
+    card: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      ...elevation.card,
+    },
+    cardEyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+    },
+    cardTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.title,
+      lineHeight: 28,
+      marginTop: spacing.xs,
+    },
+    cardBody: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+    },
+    appearance: {
+      alignItems: "flex-start",
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.md,
+      marginTop: spacing.md,
+      padding: spacing.lg,
+    },
+    appearanceCopy: { flex: 1, minWidth: 0 },
+    appearanceTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+      lineHeight: 23,
+      marginTop: spacing.xs,
+    },
+    systemBadge: {
+      alignItems: "center",
+      borderColor: colors.borderStrong,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.xs,
+      minHeight: 36,
+      paddingHorizontal: spacing.sm,
+    },
+    systemDot: {
+      backgroundColor: colors.brand,
+      borderRadius: radius.pill,
+      height: 8,
+      width: 8,
+    },
+    systemText: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.6,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+    ruleCard: {
+      backgroundColor: isDark ? colors.surfaceRaised : colors.text,
+      borderRadius: radius.xl,
+      marginBottom: spacing.xl,
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+    },
+    ruleLabel: {
+      color: colors.brand,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 1.1,
+    },
+    ruleTitle: {
+      color: isDark ? colors.text : colors.background,
+      fontFamily: type.display,
+      fontSize: typeScale.title,
+      lineHeight: 28,
+      marginTop: spacing.sm,
+    },
+    ruleBody: {
+      color: isDark ? colors.textMuted : colors.surfaceMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+    },
+  });

@@ -1,10 +1,22 @@
 import { StyleSheet, Text } from "react-native";
 
-import { colors, radius, type } from "../design-system/tokens";
+import { useAppTheme } from "../design-system/theme";
 
 export function DemoBadge({ label }: { label: string }) {
+  const { colors, radius, type } = useAppTheme();
   return (
-    <Text accessibilityLabel={`${label}, fixture data`} style={styles.badge}>
+    <Text
+      accessibilityLabel={`${label}, fixture data`}
+      style={[
+        styles.badge,
+        {
+          backgroundColor: colors.brand,
+          borderRadius: radius.pill,
+          color: colors.onBrand,
+          fontFamily: type.label,
+        },
+      ]}
+    >
       FIXTURE · {label}
     </Text>
   );
@@ -13,10 +25,6 @@ export function DemoBadge({ label }: { label: string }) {
 const styles = StyleSheet.create({
   badge: {
     alignSelf: "flex-start",
-    backgroundColor: colors.calamansi,
-    borderRadius: radius.pill,
-    color: colors.ink,
-    fontFamily: type.label,
     fontSize: 11,
     letterSpacing: 0.8,
     overflow: "hidden",

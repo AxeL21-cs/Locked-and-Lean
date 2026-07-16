@@ -1,17 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../components/ActionButton";
 import { AsyncStatePanel } from "../../components/AsyncStatePanel";
 import { ChoiceChips } from "../../components/ChoiceChips";
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import type { MealType } from "../../services/supabase";
 import type {
   CalendarDayView,
@@ -56,6 +49,7 @@ function DayButton({
   compact: boolean;
   onPress: () => void;
 }) {
+  const styles = useHistoryStyles();
   const label = `${day.accessibilityLabel}. ${day.status.accessibilityLabel}. ${day.snapshot.entryCount} confirmed ${day.snapshot.entryCount === 1 ? "entry" : "entries"}. ${Math.round(day.snapshot.calories)} calories.`;
   return (
     <Pressable
@@ -70,12 +64,19 @@ function DayButton({
       ]}
     >
       {!compact ? (
-        <Text style={styles.weekLabel}>{day.weekdayLabel}</Text>
+        <Text maxFontSizeMultiplier={1.5} style={styles.weekLabel}>
+          {day.weekdayLabel}
+        </Text>
       ) : null}
-      <Text style={[styles.dayNumber, day.isToday && styles.todayNumber]}>
+      <Text
+        maxFontSizeMultiplier={1.5}
+        style={[styles.dayNumber, day.isToday && styles.todayNumber]}
+      >
         {day.dayNumber}
       </Text>
-      <Text style={styles.daySymbol}>{day.status.symbol}</Text>
+      <Text maxFontSizeMultiplier={1.5} style={styles.daySymbol}>
+        {day.status.symbol}
+      </Text>
       {!compact ? (
         <>
           <Text style={styles.weekStatus}>{day.status.label}</Text>
@@ -101,6 +102,7 @@ function PeriodNavigator({
   onPrevious: () => void;
   onToday: () => void;
 }) {
+  const styles = useHistoryStyles();
   return (
     <View style={styles.periodNavigator}>
       <Pressable
@@ -144,6 +146,7 @@ function HistoryGrid({
   selectedDate: string;
   onSelectDate: (localDate: string) => void;
 }) {
+  const styles = useHistoryStyles();
   if (mode === "day") return null;
   return (
     <View style={styles.calendarCard}>
@@ -189,6 +192,7 @@ function EntryCard({
   onEdit: () => void;
   onAskDelete: () => void;
 }) {
+  const styles = useHistoryStyles();
   const title = entry.items[0]?.foodName || entry.originalDescription;
   return (
     <View style={styles.entry}>
@@ -263,6 +267,7 @@ function DayLedger({
   onEdit: (entry: HistoryEntryView) => void;
   onDelete: (entry: HistoryEntryView) => Promise<void>;
 }) {
+  const styles = useHistoryStyles();
   const [pendingDelete, setPendingDelete] = useState<HistoryEntryView>();
   const confirmDelete = async () => {
     if (!pendingDelete) return;
@@ -441,269 +446,308 @@ export function HistoryCalendar({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  periodNavigator: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginTop: spacing.lg,
-  },
-  periodArrow: {
-    alignItems: "center",
-    borderColor: colors.rule,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    height: 48,
-    justifyContent: "center",
-    width: 48,
-  },
-  periodArrowText: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 30,
-  },
-  periodTitleButton: {
-    alignItems: "center",
-    flex: 1,
-    minHeight: 48,
-    justifyContent: "center",
-    paddingHorizontal: spacing.sm,
-  },
-  periodTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 24,
-    textAlign: "center",
-  },
-  periodToday: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.8,
-    marginTop: 3,
-  },
-  calendarCard: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.lg,
-    overflow: "hidden",
-    padding: spacing.sm,
-    ...elevation.card,
-  },
-  weekdayRow: { flexDirection: "row", paddingVertical: spacing.sm },
-  weekday: {
-    color: colors.inkFaint,
-    flex: 1,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.5,
-    textAlign: "center",
-  },
-  monthGrid: { flexDirection: "row", flexWrap: "wrap" },
-  weekGrid: { gap: spacing.sm },
-  dayCell: {
-    alignItems: "center",
-    aspectRatio: 0.9,
-    borderColor: "transparent",
-    borderRadius: radius.sm,
-    borderWidth: 2,
-    justifyContent: "center",
-    minHeight: 48,
-    width: "14.2857%",
-  },
-  weekCell: {
-    alignItems: "center",
-    borderColor: colors.rule,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flexDirection: "row",
-    minHeight: 58,
-    paddingHorizontal: spacing.md,
-  },
-  outsideMonth: { opacity: 0.35 },
-  selectedDay: { backgroundColor: colors.skyWash, borderColor: colors.ink },
-  dayNumber: {
-    color: colors.ink,
-    fontFamily: type.bodyStrong,
-    fontSize: typeScale.label,
-  },
-  todayNumber: { textDecorationLine: "underline" },
-  daySymbol: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 12,
-  },
-  weekLabel: {
-    color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    width: 36,
-  },
-  weekStatus: {
-    color: colors.inkMuted,
-    flex: 1,
-    fontFamily: type.bodyStrong,
-    fontSize: typeScale.label,
-  },
-  weekKcal: {
-    color: colors.ink,
-    fontFamily: type.numeric,
-    fontSize: typeScale.label,
-  },
-  legend: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    padding: spacing.sm,
-  },
-  ledger: { marginTop: spacing.xl },
-  ledgerHead: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  ledgerEyebrow: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 0.8,
-  },
-  ledgerTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 28,
-    marginTop: 3,
-  },
-  ledgerStatus: {
-    color: colors.inkMuted,
-    fontFamily: type.bodyStrong,
-    fontSize: typeScale.label,
-    marginTop: 4,
-  },
-  ledgerCalories: { color: colors.ink, fontFamily: type.numeric, fontSize: 30 },
-  ledgerUnit: {
-    color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-  },
-  summaryStrip: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.md,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    padding: spacing.md,
-  },
-  summaryText: {
-    color: colors.rice,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-  },
-  truncated: {
-    backgroundColor: colors.tomatoWash,
-    color: colors.ink,
-    fontFamily: type.bodyStrong,
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: spacing.md,
-    padding: spacing.md,
-  },
-  mealGroup: { marginTop: spacing.xl },
-  mealTitle: {
-    borderBottomColor: colors.ink,
-    borderBottomWidth: 1,
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 23,
-    paddingBottom: spacing.sm,
-  },
-  entry: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: 10,
-    padding: 16,
-    ...elevation.card,
-  },
-  entryTop: { flexDirection: "row", gap: spacing.md },
-  entryName: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 15 },
-  entryMeta: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    marginTop: 3,
-  },
-  entryCalories: { color: colors.ink, fontFamily: type.label, fontSize: 15 },
-  entryUnit: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-  },
-  entryMacros: {
-    color: colors.inkMuted,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    marginTop: spacing.sm,
-  },
-  warning: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    fontSize: 11,
-    marginTop: spacing.sm,
-  },
-  actions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  entryAction: {
-    alignItems: "center",
-    borderColor: colors.rule,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 48,
-    minWidth: 68,
-    paddingHorizontal: spacing.md,
-  },
-  entryActionText: {
-    color: colors.ink,
-    fontFamily: type.label,
-    fontSize: typeScale.label,
-  },
-  deleteActionText: {
-    color: colors.tomato,
-    fontFamily: type.label,
-    fontSize: typeScale.label,
-  },
-  deletePanel: {
-    backgroundColor: colors.tomatoWash,
-    borderColor: colors.tomato,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-  },
-  deleteTitle: { color: colors.ink, fontFamily: type.display, fontSize: 22 },
-  deleteCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.xs,
-  },
-  deleteError: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-  serverStamp: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    marginTop: spacing.xl,
-  },
-});
+function useHistoryStyles() {
+  const theme = useAppTheme();
+  return useMemo(() => createStyles(theme), [theme]);
+}
+
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    flex: { flex: 1 },
+    periodNavigator: {
+      alignItems: "center",
+      flexDirection: "row",
+      marginTop: spacing.lg,
+    },
+    periodArrow: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      height: 48,
+      justifyContent: "center",
+      width: 48,
+    },
+    periodArrowText: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 30,
+    },
+    periodTitleButton: {
+      alignItems: "center",
+      flex: 1,
+      minHeight: 48,
+      justifyContent: "center",
+      paddingHorizontal: spacing.sm,
+    },
+    periodTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 24,
+      textAlign: "center",
+    },
+    periodToday: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.8,
+      marginTop: 3,
+    },
+    calendarCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.lg,
+      overflow: "hidden",
+      padding: spacing.sm,
+      ...elevation.card,
+    },
+    weekdayRow: { flexDirection: "row", paddingVertical: spacing.sm },
+    weekday: {
+      color: colors.textFaint,
+      flex: 1,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.5,
+      textAlign: "center",
+    },
+    monthGrid: { flexDirection: "row", flexWrap: "wrap" },
+    weekGrid: { gap: spacing.sm },
+    dayCell: {
+      alignItems: "center",
+      aspectRatio: 0.9,
+      borderColor: "transparent",
+      borderRadius: radius.sm,
+      borderWidth: 2,
+      justifyContent: "center",
+      minHeight: 48,
+      width: "14.2857%",
+    },
+    weekCell: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flexDirection: "row",
+      minHeight: 58,
+      paddingHorizontal: spacing.md,
+    },
+    outsideMonth: { opacity: 0.35 },
+    selectedDay: {
+      backgroundColor: colors.brandContainer,
+      borderColor: colors.brandStrong,
+    },
+    dayNumber: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.label,
+    },
+    todayNumber: { textDecorationLine: "underline" },
+    daySymbol: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: 12,
+    },
+    weekLabel: {
+      color: colors.textFaint,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      width: 36,
+    },
+    weekStatus: {
+      color: colors.textMuted,
+      flex: 1,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.label,
+    },
+    weekKcal: {
+      color: colors.text,
+      fontFamily: type.numeric,
+      fontSize: typeScale.label,
+    },
+    legend: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      padding: spacing.sm,
+    },
+    ledger: { marginTop: spacing.xl },
+    ledgerHead: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    ledgerEyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+    },
+    ledgerTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 28,
+      marginTop: 3,
+    },
+    ledgerStatus: {
+      color: colors.textMuted,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.label,
+      marginTop: 4,
+    },
+    ledgerCalories: {
+      color: colors.text,
+      fontFamily: type.numeric,
+      fontSize: 30,
+    },
+    ledgerUnit: {
+      color: colors.textFaint,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+    },
+    summaryStrip: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+      marginTop: spacing.lg,
+      padding: spacing.md,
+    },
+    summaryText: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+    },
+    truncated: {
+      backgroundColor: colors.dangerContainer,
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      fontSize: 11,
+      lineHeight: 17,
+      marginTop: spacing.md,
+      padding: spacing.md,
+    },
+    mealGroup: { marginTop: spacing.xl },
+    mealTitle: {
+      borderBottomColor: colors.borderStrong,
+      borderBottomWidth: 1,
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 23,
+      paddingBottom: spacing.sm,
+    },
+    entry: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: 10,
+      padding: 16,
+      ...elevation.card,
+    },
+    entryTop: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+    entryName: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+    },
+    entryMeta: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: 3,
+    },
+    entryCalories: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: typeScale.body,
+    },
+    entryUnit: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+    },
+    entryMacros: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      marginTop: spacing.sm,
+    },
+    warning: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      fontSize: 11,
+      marginTop: spacing.sm,
+    },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    entryAction: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 48,
+      minWidth: 68,
+      paddingHorizontal: spacing.md,
+    },
+    entryActionText: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: typeScale.label,
+    },
+    deleteActionText: {
+      color: colors.danger,
+      fontFamily: type.label,
+      fontSize: typeScale.label,
+    },
+    deletePanel: {
+      backgroundColor: colors.dangerContainer,
+      borderColor: colors.danger,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+    },
+    deleteTitle: { color: colors.text, fontFamily: type.display, fontSize: 22 },
+    deleteCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.xs,
+    },
+    deleteError: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+    serverStamp: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: spacing.xl,
+    },
+  });

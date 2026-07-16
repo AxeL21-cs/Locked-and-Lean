@@ -7,14 +7,8 @@ import {
   View,
 } from "react-native";
 
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../design-system/tokens";
+import type { AppTheme } from "../design-system/theme";
+import { useAppTheme } from "../design-system/theme";
 
 type StateKind = "empty" | "error" | "loading" | "offline";
 type Props = {
@@ -53,6 +47,9 @@ export function AsyncStatePanel({
   onAction,
   title,
 }: Props) {
+  const theme = useAppTheme();
+  const { colors } = theme;
+  const styles = createStyles(theme);
   return (
     <View
       accessibilityLiveRegion="polite"
@@ -64,14 +61,14 @@ export function AsyncStatePanel({
           <SymbolView
             name={symbol[kind]}
             size={22}
-            tintColor={kind === "error" ? colors.tomato : colors.ink}
+            tintColor={kind === "error" ? colors.danger : colors.text}
           />
         </View>
         <Text style={styles.status}>{status[kind]}</Text>
         {kind === "loading" ? (
           <ActivityIndicator
             accessibilityLabel="Loading"
-            color={colors.calamansiDeep}
+            color={colors.brandStrong}
             size="small"
           />
         ) : null}
@@ -81,7 +78,9 @@ export function AsyncStatePanel({
       {actionLabel && onAction ? (
         <Pressable
           accessibilityHint="Attempts the operation again"
+          accessibilityLabel={actionLabel}
           accessibilityRole="button"
+          android_ripple={{ color: theme.isDark ? "#FFFFFF1F" : "#07182F1F" }}
           onPress={onAction}
           style={({ pressed }) => [
             styles.action,
@@ -95,61 +94,70 @@ export function AsyncStatePanel({
   );
 }
 
-const styles = StyleSheet.create({
-  panel: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-    ...elevation.card,
-  },
-  errorPanel: {
-    backgroundColor: colors.tomatoWash,
-    borderColor: colors.tomato,
-  },
-  topline: { alignItems: "center", flexDirection: "row", gap: spacing.sm },
-  symbolBox: {
-    alignItems: "center",
-    backgroundColor: colors.calamansiWash,
-    borderRadius: radius.pill,
-    height: 40,
-    justifyContent: "center",
-    width: 40,
-  },
-  status: {
-    color: colors.inkFaint,
-    flex: 1,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 1,
-  },
-  title: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: typeScale.title,
-    lineHeight: 26,
-    marginTop: spacing.md,
-  },
-  message: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: typeScale.bodySmall,
-    lineHeight: 21,
-    marginTop: spacing.xs,
-  },
-  action: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: colors.ink,
-    borderRadius: radius.md,
-    justifyContent: "center",
-    marginTop: spacing.lg,
-    minHeight: 52,
-    minWidth: 132,
-    paddingHorizontal: spacing.lg,
-  },
-  actionPressed: { opacity: 0.75 },
-  actionText: { color: colors.rice, fontFamily: type.label, fontSize: 14 },
-});
+function createStyles({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) {
+  return StyleSheet.create({
+    panel: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+      ...elevation.card,
+    },
+    errorPanel: {
+      backgroundColor: colors.dangerContainer,
+      borderColor: colors.danger,
+    },
+    topline: { alignItems: "center", flexDirection: "row", gap: spacing.sm },
+    symbolBox: {
+      alignItems: "center",
+      backgroundColor: colors.brandContainer,
+      borderRadius: radius.pill,
+      height: 40,
+      justifyContent: "center",
+      width: 40,
+    },
+    status: {
+      color: colors.textFaint,
+      flex: 1,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 1,
+    },
+    title: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.title,
+      lineHeight: 26,
+      marginTop: spacing.md,
+    },
+    message: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+    },
+    action: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: colors.brand,
+      borderRadius: radius.md,
+      justifyContent: "center",
+      marginTop: spacing.lg,
+      minHeight: 52,
+      minWidth: 132,
+      paddingHorizontal: spacing.lg,
+    },
+    actionPressed: { opacity: 0.75 },
+    actionText: { color: colors.onBrand, fontFamily: type.label, fontSize: 14 },
+  });
+}

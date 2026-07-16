@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Alert,
@@ -20,7 +20,8 @@ import { ChoiceChips } from "../../components/ChoiceChips";
 import { Field } from "../../components/Field";
 import { Screen } from "../../components/Screen";
 import { ScreenHeader } from "../../components/ScreenHeader";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import type { AppTheme } from "../../design-system/theme";
+import { useAppTheme } from "../../design-system/theme";
 import { localDateInManila } from "../../domain/localization/philippines";
 import {
   mobileApi,
@@ -94,6 +95,8 @@ const idempotencyKey = () =>
 
 export function ManualEntryFlow() {
   const router = useRouter();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const params = useLocalSearchParams<{
     name?: string;
     barcode?: string;
@@ -468,8 +471,13 @@ export function ManualEntryFlow() {
             accessibilityLabel="Save this food for reuse after confirmation"
             accessibilityRole="checkbox"
             accessibilityState={{ checked: field.value }}
+            android_ripple={{ color: theme.colors.brandContainer }}
             onPress={() => field.onChange(!field.value)}
-            style={styles.check}
+            style={({ pressed }) => [
+              styles.check,
+              field.value && styles.checkSelected,
+              pressed && styles.checkPressed,
+            ]}
           >
             <Text style={styles.checkMark}>{field.value ? "☑" : "☐"}</Text>
             <View style={styles.flex}>
@@ -502,69 +510,89 @@ export function ManualEntryFlow() {
   );
 }
 
-const styles = StyleSheet.create({
-  intro: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: spacing.xl,
-  },
-  two: { flexDirection: "row", gap: spacing.md },
-  three: { flexDirection: "row", gap: spacing.sm },
-  flex: { flex: 1 },
-  check: {
-    alignItems: "center",
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    minHeight: 64,
-    padding: spacing.md,
-  },
-  checkMark: { color: colors.ink, fontSize: 24 },
-  checkTitle: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 13 },
-  checkCopy: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: 2,
-  },
-  error: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-  contextCard: {
-    backgroundColor: colors.calamansiWash,
-    borderColor: colors.calamansiDeep,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.md,
-    padding: spacing.md,
-  },
-  contextTitle: {
-    color: colors.ink,
-    fontFamily: type.bodyStrong,
-    fontSize: 14,
-  },
-  contextCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 3,
-  },
-  offline: {
-    backgroundColor: colors.calamansiWash,
-    color: colors.ink,
-    fontFamily: type.bodyStrong,
-    lineHeight: 20,
-    marginTop: spacing.md,
-    padding: spacing.md,
-  },
-});
+const createStyles = ({ colors, radius, spacing, type, typeScale }: AppTheme) =>
+  StyleSheet.create({
+    intro: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.xl,
+      padding: spacing.md,
+    },
+    two: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+    three: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    flex: { flex: 1, minWidth: 96 },
+    check: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.md,
+      marginTop: spacing.lg,
+      minHeight: 72,
+      overflow: "hidden",
+      padding: spacing.md,
+    },
+    checkSelected: {
+      backgroundColor: colors.brandContainer,
+      borderColor: colors.brandStrong,
+    },
+    checkPressed: { opacity: 0.76 },
+    checkMark: { color: colors.text, fontSize: 24 },
+    checkTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 20,
+    },
+    checkCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: 2,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+    contextCard: {
+      backgroundColor: colors.brandContainer,
+      borderColor: colors.brandStrong,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.md,
+      padding: spacing.md,
+    },
+    contextTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.bodySmall,
+    },
+    contextCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: 3,
+    },
+    offline: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      lineHeight: 20,
+      marginTop: spacing.md,
+      padding: spacing.md,
+    },
+  });

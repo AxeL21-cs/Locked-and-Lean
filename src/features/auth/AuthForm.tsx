@@ -3,21 +3,16 @@ import { useMutation } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { useMemo } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { ActionButton } from "../../components/ActionButton";
+import { BrandMark } from "../../components/BrandMark";
 import { Field } from "../../components/Field";
 import { Screen } from "../../components/Screen";
 import { PRODUCT } from "../../design-system/product";
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import { mobileApi } from "../../services/supabase";
 import { oauthConsentRoute } from "../oauth/authorization";
 
@@ -36,6 +31,8 @@ export function AuthForm({
   oauthAuthorizationId?: string;
 }) {
   const router = useRouter();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const needsEmail = mode !== "update";
   const modeSchema =
     mode === "reset"
@@ -103,13 +100,8 @@ export function AuthForm({
 
   return (
     <Screen>
-      <View style={styles.mark}>
-        <Image
-          accessibilityLabel={`${PRODUCT.name} mark`}
-          resizeMode="contain"
-          source={require("../../../assets/brand/locked-and-lean-mark-ink.png")}
-          style={styles.markImage}
-        />
+      <View style={styles.brandLockup}>
+        <BrandMark size={88} showWordmark />
       </View>
       <Text style={styles.eyebrow}>{copy[0]}</Text>
       <Text accessibilityRole="header" style={styles.title}>
@@ -209,92 +201,90 @@ export function AuthForm({
   );
 }
 
-const styles = StyleSheet.create({
-  mark: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: colors.calamansi,
-    borderColor: colors.ink,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    height: 64,
-    justifyContent: "center",
-    marginTop: spacing.xl,
-    width: 64,
-    ...elevation.card,
-  },
-  markImage: { height: 38, width: 38 },
-  eyebrow: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 1,
-    marginTop: spacing.xl,
-  },
-  title: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: typeScale.display,
-    letterSpacing: -1.1,
-    lineHeight: 40,
-    marginTop: spacing.xs,
-  },
-  intro: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: typeScale.body,
-    lineHeight: 24,
-    marginTop: spacing.sm,
-  },
-  form: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-    ...elevation.card,
-  },
-  oauthReturn: {
-    backgroundColor: colors.skyWash,
-    borderColor: colors.inkRule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.lg,
-    padding: spacing.md,
-  },
-  oauthReturnTitle: {
-    color: colors.ink,
-    fontFamily: type.bodyStrong,
-    fontSize: typeScale.bodySmall,
-  },
-  oauthReturnCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: typeScale.bodySmall,
-    lineHeight: 21,
-    marginTop: 3,
-  },
-  error: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: spacing.md,
-  },
-  success: {
-    color: colors.calamansiDeep,
-    fontFamily: type.bodyStrong,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: spacing.md,
-  },
-  privacy: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    marginBottom: spacing.xl,
-    marginTop: spacing.lg,
-  },
-});
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    brandLockup: {
+      alignSelf: "flex-start",
+      marginTop: spacing.xl,
+    },
+    eyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 1,
+      marginTop: spacing.xl,
+    },
+    title: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.display,
+      letterSpacing: -1.1,
+      lineHeight: 40,
+      marginTop: spacing.xs,
+    },
+    intro: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.body,
+      lineHeight: 24,
+      marginTop: spacing.sm,
+    },
+    form: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+      ...elevation.card,
+    },
+    oauthReturn: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.lg,
+      padding: spacing.md,
+    },
+    oauthReturnTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.bodySmall,
+    },
+    oauthReturnCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: 3,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: spacing.md,
+    },
+    success: {
+      color: colors.success,
+      fontFamily: type.bodyStrong,
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: spacing.md,
+    },
+    privacy: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginBottom: spacing.xl,
+      marginTop: spacing.lg,
+    },
+  });

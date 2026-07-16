@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../components/ActionButton";
@@ -6,7 +6,7 @@ import { AsyncStatePanel } from "../../components/AsyncStatePanel";
 import { ChoiceChips } from "../../components/ChoiceChips";
 import { Field } from "../../components/Field";
 import { ScreenHeader } from "../../components/ScreenHeader";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import { localDateInManila } from "../../domain/history";
 import type { FoodPreview, MealType } from "../../services/supabase";
 import { ManualPreviewCard } from "../add/ManualPreviewCard";
@@ -63,6 +63,8 @@ export function HistoryActionFlow({
   onCancel: () => void;
   onDone: () => void;
 }) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const originalInstant = new Date(entry.consumedAt);
   const defaultInstant = action === "copy" ? new Date() : originalInstant;
   const [mealType, setMealType] = useState(entry.mealType);
@@ -242,30 +244,35 @@ export function HistoryActionFlow({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  safetyCard: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-  },
-  safetyTitle: { color: colors.ink, fontFamily: type.display, fontSize: 23 },
-  safetyCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.xs,
-  },
-  twoColumns: { flexDirection: "row", gap: spacing.md },
-  snapshotNote: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: spacing.lg,
-  },
-});
+const createStyles = ({ colors, radius, spacing, type, typeScale }: AppTheme) =>
+  StyleSheet.create({
+    flex: { flex: 1, minWidth: 140 },
+    safetyCard: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+    },
+    safetyTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.title,
+    },
+    safetyCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+    },
+    twoColumns: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+    snapshotNote: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.lg,
+    },
+  });

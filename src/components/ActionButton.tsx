@@ -1,12 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-} from "../design-system/tokens";
+import type { AppTheme } from "../design-system/theme";
+import { useAppTheme } from "../design-system/theme";
 
 export function ActionButton({
   label,
@@ -23,6 +18,8 @@ export function ActionButton({
   tone?: "primary" | "secondary" | "danger";
   accessibilityHint?: string;
 }) {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
   const blocked = busy || disabled;
   return (
     <Pressable
@@ -30,6 +27,7 @@ export function ActionButton({
       accessibilityLabel={busy ? `${label}, in progress` : label}
       accessibilityRole="button"
       accessibilityState={{ disabled: blocked, busy }}
+      android_ripple={{ color: theme.isDark ? "#FFFFFF1F" : "#07182F1F" }}
       disabled={blocked}
       onPress={onPress}
       style={({ pressed }) => [
@@ -42,11 +40,21 @@ export function ActionButton({
     >
       {busy ? (
         <ActivityIndicator
-          color={tone === "secondary" ? colors.ink : colors.rice}
+          color={
+            tone === "secondary"
+              ? theme.colors.text
+              : tone === "danger"
+                ? theme.colors.onDanger
+                : theme.colors.onBrand
+          }
         />
       ) : null}
       <Text
-        style={[styles.label, tone === "secondary" && styles.secondaryLabel]}
+        style={[
+          styles.label,
+          tone === "secondary" && styles.secondaryLabel,
+          tone === "danger" && styles.dangerLabel,
+        ]}
       >
         {label}
       </Text>
@@ -54,36 +62,39 @@ export function ActionButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    alignItems: "center",
-    backgroundColor: colors.ink,
-    borderColor: colors.ink,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: spacing.sm,
-    justifyContent: "center",
-    marginTop: spacing.md,
-    minHeight: 56,
-    paddingHorizontal: spacing.lg,
-    ...elevation.card,
-  },
-  secondary: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.ruleStrong,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  danger: { backgroundColor: colors.tomato, borderColor: colors.tomato },
-  disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.75, transform: [{ scale: 0.995 }] },
-  label: {
-    color: colors.rice,
-    fontFamily: type.label,
-    fontSize: 15,
-    letterSpacing: 0.2,
-    lineHeight: 20,
-  },
-  secondaryLabel: { color: colors.ink },
-});
+function createStyles({ colors, elevation, radius, spacing, type }: AppTheme) {
+  return StyleSheet.create({
+    button: {
+      alignItems: "center",
+      backgroundColor: colors.brand,
+      borderColor: colors.brand,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+      justifyContent: "center",
+      marginTop: spacing.md,
+      minHeight: 56,
+      paddingHorizontal: spacing.lg,
+      ...elevation.card,
+    },
+    secondary: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.borderStrong,
+      elevation: 0,
+      shadowOpacity: 0,
+    },
+    danger: { backgroundColor: colors.danger, borderColor: colors.danger },
+    disabled: { opacity: 0.5 },
+    pressed: { opacity: 0.75, transform: [{ scale: 0.995 }] },
+    label: {
+      color: colors.onBrand,
+      fontFamily: type.label,
+      fontSize: 15,
+      letterSpacing: 0.2,
+      lineHeight: 20,
+    },
+    secondaryLabel: { color: colors.text },
+    dangerLabel: { color: colors.onDanger },
+  });
+}

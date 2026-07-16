@@ -1,17 +1,20 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../components/ActionButton";
 import { AsyncStatePanel } from "../../components/AsyncStatePanel";
 import { Screen } from "../../components/Screen";
 import { ScreenHeader } from "../../components/ScreenHeader";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import { mobileApi } from "../../services/supabase";
 
 export function TargetReview() {
   const router = useRouter();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const query = useQuery({
     queryKey: ["proposed-target"],
     queryFn: () => mobileApi.getProposedNutritionTarget(),
@@ -117,76 +120,87 @@ export function TargetReview() {
     </Screen>
   );
 }
-const styles = StyleSheet.create({
-  energy: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.xl,
-    marginTop: spacing.xl,
-    padding: spacing.xl,
-  },
-  kcal: {
-    color: colors.rice,
-    fontFamily: type.display,
-    fontSize: 58,
-    letterSpacing: -2,
-  },
-  kcalLabel: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: 12,
-    letterSpacing: 2,
-  },
-  macros: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  macro: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    flex: 1,
-    padding: spacing.md,
-  },
-  macroValue: { color: colors.ink, fontFamily: type.display, fontSize: 20 },
-  macroLabel: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: 12,
-    marginTop: spacing.xs,
-  },
-  detail: {
-    borderBottomColor: colors.rule,
-    borderBottomWidth: 1,
-    marginTop: spacing.xl,
-    paddingBottom: spacing.lg,
-  },
-  detailTitle: { color: colors.ink, fontFamily: type.display, fontSize: 22 },
-  detailBody: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    marginTop: spacing.xs,
-  },
-  assumption: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    marginTop: spacing.sm,
-  },
-  warning: {
-    backgroundColor: colors.tomatoWash,
-    borderRadius: radius.lg,
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-  },
-  warningTitle: { color: colors.ink, fontFamily: type.bodyStrong },
-  warningBody: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.xs,
-  },
-  error: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-});
+const createStyles = ({ colors, radius, spacing, type }: AppTheme) =>
+  StyleSheet.create({
+    energy: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.xl,
+    },
+    kcal: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 58,
+      letterSpacing: -2,
+    },
+    kcalLabel: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: 12,
+      letterSpacing: 2,
+    },
+    macros: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    macro: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flex: 1,
+      minWidth: 104,
+      padding: spacing.md,
+    },
+    macroValue: { color: colors.text, fontFamily: type.display, fontSize: 20 },
+    macroLabel: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: 12,
+      marginTop: spacing.xs,
+    },
+    detail: {
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+      marginTop: spacing.xl,
+      paddingBottom: spacing.lg,
+    },
+    detailTitle: { color: colors.text, fontFamily: type.display, fontSize: 22 },
+    detailBody: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      marginTop: spacing.xs,
+    },
+    assumption: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 12,
+      marginTop: spacing.sm,
+    },
+    warning: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+    },
+    warningTitle: { color: colors.text, fontFamily: type.bodyStrong },
+    warningBody: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.xs,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+  });

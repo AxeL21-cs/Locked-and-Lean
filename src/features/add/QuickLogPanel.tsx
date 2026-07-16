@@ -4,7 +4,8 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import type { AppTheme } from "../../design-system/theme";
+import { useAppTheme } from "../../design-system/theme";
 import { addLocalDateDays, localDateInManila } from "../../domain/history";
 import {
   mobileApi,
@@ -22,26 +23,36 @@ import {
   type FoodContextSuggestion,
 } from "../offline/offlineStore";
 
+type QuickStyles = ReturnType<typeof createStyles>;
+
 function QuickButton({
   label,
   detail,
   onPress,
+  rippleColor,
+  styles,
 }: {
   label: string;
   detail: string;
   onPress: () => void;
+  rippleColor: string;
+  styles: QuickStyles;
 }) {
   return (
     <Pressable
       accessibilityHint="Creates or opens a new preview; it does not log immediately"
       accessibilityLabel={`${label}. ${detail}`}
       accessibilityRole="button"
+      android_ripple={{ color: rippleColor }}
       onPress={onPress}
       style={({ pressed }) => [styles.quick, pressed && styles.pressed]}
     >
       <Text style={styles.quickTitle}>{label}</Text>
       <Text style={styles.quickDetail}>{detail}</Text>
-      <Text style={styles.review}>REVIEW →</Text>
+      <View style={styles.reviewRow}>
+        <Text style={styles.review}>CREATE PREVIEW</Text>
+        <Text style={styles.reviewArrow}>→</Text>
+      </View>
     </Pressable>
   );
 }
@@ -49,6 +60,8 @@ function QuickButton({
 export function QuickLogPanel() {
   const router = useRouter();
   const { session } = useSession();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const ownerId = session?.user.id;
   const yesterday = addLocalDateDays(localDateInManila(new Date()), -1);
   const [contexts, setContexts] = useState<FoodContextSuggestion[]>([]);
@@ -114,8 +127,29 @@ export function QuickLogPanel() {
     /rice|kanin|sinangag/i.test(item.foodName),
   );
 
+  if (ownerId && history.isLoading && saved.isLoading)
+    return (
+      <View
+        accessibilityLiveRegion="polite"
+        accessibilityLabel="Loading your usual foods"
+        style={styles.loadingCard}
+      >
+        <View style={styles.loadingRule} />
+        <View style={styles.loadingCopy}>
+          <Text style={styles.loadingLabel}>YOUR USUALS</Text>
+          <Text style={styles.loadingTitle}>Checking recent portions…</Text>
+        </View>
+      </View>
+    );
+
   if (!breakfast && !usualRice && !recent.length && !favorites.length)
     return null;
+
+  const quickProps = {
+    rippleColor: theme.colors.brandContainer,
+    styles,
+  };
+
   return (
     <View style={styles.section}>
       <Text style={styles.eyebrow}>QUICK LOG · PREVIEW STILL REQUIRED</Text>
@@ -128,6 +162,7 @@ export function QuickLogPanel() {
       </Text>
       {breakfast ? (
         <QuickButton
+          {...quickProps}
           label="Repeat breakfast"
           detail={`${breakfast.originalDescription} · from yesterday`}
           onPress={() =>
@@ -144,6 +179,7 @@ export function QuickLogPanel() {
       ) : null}
       {usualRice ? (
         <QuickButton
+          {...quickProps}
           label="Usual rice at home"
           detail={`${usualRice.historicalLabel} · historical suggestion`}
           onPress={() =>
@@ -156,6 +192,7 @@ export function QuickLogPanel() {
       ) : null}
       {recent.map((entry) => (
         <QuickButton
+          {...quickProps}
           key={entry.id}
           label={
             entry.originalDescription ||
@@ -177,6 +214,7 @@ export function QuickLogPanel() {
       ))}
       {favorites.map((food) => (
         <QuickButton
+          {...quickProps}
           key={food.id}
           label={`★ ${food.foodName}`}
           detail={`${food.serving} · saved favorite`}
@@ -199,6 +237,7 @@ export function QuickLogPanel() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Copy yesterday, review each entry separately"
+          android_ripple={{ color: theme.colors.brandContainer }}
           onPress={() =>
             router.push({
               pathname: "/(tabs)/calendar",
@@ -216,69 +255,127 @@ export function QuickLogPanel() {
   );
 }
 
-const styles = StyleSheet.create({
-  section: { marginTop: spacing.xl },
-  eyebrow: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1,
-  },
-  title: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 28,
-    marginTop: spacing.xs,
-  },
-  copy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  quick: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.sm,
-    minHeight: 76,
-    padding: spacing.md,
-  },
-  pressed: { opacity: 0.72 },
-  quickTitle: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 16 },
-  quickDetail: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 2,
-    paddingRight: 64,
-  },
-  review: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 11,
-    position: "absolute",
-    right: spacing.md,
-    top: spacing.md,
-  },
-  copyYesterday: {
-    alignItems: "center",
-    borderColor: colors.ink,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    justifyContent: "center",
-    marginTop: spacing.md,
-    minHeight: 48,
-    paddingHorizontal: spacing.md,
-  },
-  copyYesterdayText: {
-    color: colors.ink,
-    fontFamily: type.label,
-    fontSize: 12,
-    letterSpacing: 0.5,
-  },
-});
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    section: { marginTop: spacing.xl },
+    eyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.9,
+    },
+    title: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.headline,
+      lineHeight: 34,
+      marginTop: spacing.xs,
+    },
+    copy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginBottom: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    quick: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.sm,
+      minHeight: 96,
+      overflow: "hidden",
+      padding: spacing.md,
+      ...elevation.card,
+    },
+    pressed: { opacity: 0.76, transform: [{ scale: 0.99 }] },
+    quickTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+      lineHeight: 22,
+    },
+    quickDetail: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.label,
+      lineHeight: 19,
+      marginTop: 3,
+    },
+    reviewRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    review: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.7,
+    },
+    reviewArrow: {
+      color: colors.brandStrong,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+    },
+    copyYesterday: {
+      alignItems: "center",
+      borderColor: colors.borderStrong,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      justifyContent: "center",
+      marginTop: spacing.md,
+      minHeight: 52,
+      overflow: "hidden",
+      paddingHorizontal: spacing.md,
+    },
+    copyYesterdayText: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.5,
+      textAlign: "center",
+    },
+    loadingCard: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.md,
+      marginTop: spacing.xl,
+      minHeight: 88,
+      padding: spacing.md,
+    },
+    loadingRule: {
+      alignSelf: "stretch",
+      backgroundColor: colors.brand,
+      borderRadius: radius.pill,
+      width: 5,
+    },
+    loadingCopy: { flex: 1 },
+    loadingLabel: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+    },
+    loadingTitle: {
+      color: colors.textMuted,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+      lineHeight: 22,
+      marginTop: 3,
+    },
+  });

@@ -2,16 +2,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { z } from "zod";
 
 import { ActionButton } from "../../components/ActionButton";
+import { BrandMark } from "../../components/BrandMark";
 import { ChoiceChips } from "../../components/ChoiceChips";
 import { Field } from "../../components/Field";
 import { Screen } from "../../components/Screen";
 import { ScreenHeader } from "../../components/ScreenHeader";
 import { PRODUCT } from "../../design-system/product";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import {
   mobileApi,
   type ActivityLevel,
@@ -55,6 +57,8 @@ type Values = z.infer<typeof schema>;
 
 export function OnboardingForm() {
   const router = useRouter();
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const queryClient = useQueryClient();
   const {
     control,
@@ -99,6 +103,9 @@ export function OnboardingForm() {
 
   return (
     <Screen>
+      <View style={styles.brandLockup}>
+        <BrandMark size={68} showWordmark />
+      </View>
       <ScreenHeader
         eyebrow="ADULT ONBOARDING"
         title="Set your baseline"
@@ -247,24 +254,28 @@ export function OnboardingForm() {
     </Screen>
   );
 }
-const styles = StyleSheet.create({
-  note: {
-    backgroundColor: colors.skyWash,
-    borderRadius: radius.lg,
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-  },
-  noteTitle: { color: colors.ink, fontFamily: type.display, fontSize: 19 },
-  noteBody: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: spacing.xs,
-  },
-  error: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    marginTop: spacing.md,
-  },
-});
+const createStyles = ({ colors, radius, spacing, type }: AppTheme) =>
+  StyleSheet.create({
+    brandLockup: { alignSelf: "flex-start", marginBottom: spacing.sm },
+    note: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+    },
+    noteTitle: { color: colors.text, fontFamily: type.display, fontSize: 19 },
+    noteBody: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 13,
+      lineHeight: 20,
+      marginTop: spacing.xs,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      marginTop: spacing.md,
+    },
+  });

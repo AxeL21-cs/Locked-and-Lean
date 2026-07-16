@@ -2,78 +2,55 @@
 
 ## Brand idea
 
-Locked and Lean is disciplined but encouraging. The mark combines three ideas in one compact silhouette:
+The current mark combines a padlock, fork, and leaf. It communicates disciplined tracking, food-first logging, and sustainable progress without using body imagery or shame-based fitness language.
 
-- a lock shackle for commitment and the product's `interpret -> verify -> log` discipline;
-- a circular plate or bowl for food tracking; and
-- a large `L` counterform for the configurable product name.
+The product name remains configurable. Render `PRODUCT.name` as live text beside the mark; do not bake the name into feature artwork.
 
-The calamansi-colored dot is a positive completion cue, not a keyhole or a body-weight target. Philippine context comes through the calamansi and rice palette and the food-first metaphor, without relying on flags, maps, or stereotypes. The identity must never imply punishment, restriction, shame, or a particular body shape.
+## Approved 2026 assets
 
-## Approved assets
+The two approved masters are exact copies of the user-supplied artwork. Both are 1254 x 1254, RGB, fully opaque PNG files.
 
-All production assets are 1024 x 1024 PNG files.
+| Asset            | Repository path                                | Intended use                                                                  |
+| ---------------- | ---------------------------------------------- | ----------------------------------------------------------------------------- |
+| Light appearance | `assets/brand/locked-and-lean-brand-light.png` | Light UI, light splash artwork, and light-background brand lockups            |
+| Dark appearance  | `assets/brand/locked-and-lean-brand-dark.png`  | Dark UI, Android launcher/adaptive icon, favicon, and dark-background lockups |
 
-| Asset      | Exact repository path                        | Format            | Use                                                                                                                    |
-| ---------- | -------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| App icon   | `assets/brand/locked-and-lean-app-icon.png`  | RGB, opaque       | Primary launcher icon. Warm-rice background is included. Let the platform apply its own mask; do not pre-round it.     |
-| Color mark | `assets/brand/locked-and-lean-mark.png`      | RGBA, transparent | Splash screens, navigation, marketing, and a mark-plus-live-text lockup.                                               |
-| Ink mark   | `assets/brand/locked-and-lean-mark-ink.png`  | RGBA, transparent | One-color use on warm rice, white, or other light backgrounds. The `L` and status dot become transparent counterforms. |
-| Rice mark  | `assets/brand/locked-and-lean-mark-rice.png` | RGBA, transparent | One-color use on deep ink or other dark backgrounds. The `L` and status dot become transparent counterforms.           |
+The supplied files contain black corner pixels rather than transparency. `BrandMark` therefore clips them inside a proportional rounded square without changing the source files. Do not use either file as a transparent overlay.
 
-There is intentionally no raster wordmark. Render the configured product name as live text next to the mark so localization, accessibility, and product-name configuration remain intact. Do not bake `Locked and Lean` into feature assets.
+## Theme behavior
 
-## Palette
+- The application follows the Android system light/dark preference through `userInterfaceStyle: automatic` and `AppThemeProvider`.
+- `BrandMark` automatically selects the light or dark source artwork.
+- Expo splash configuration declares separate light and dark images.
+- Android launchers do not switch a conventional icon when the in-app color scheme changes. The dark navy/lime artwork is the canonical launcher icon; both variants remain available inside the app.
+- A Profile appearance row truthfully reports the current system mode. There is no fake in-app theme toggle.
 
-| Token     | Hex       | RGB           | Role                                                              |
-| --------- | --------- | ------------- | ----------------------------------------------------------------- |
-| Deep ink  | `#132019` | 19, 32, 25    | Primary mark, text, dark surfaces                                 |
-| Warm rice | `#F5F0E6` | 245, 240, 230 | Primary background, reverse mark                                  |
-| Calamansi | `#D9FF64` | 217, 255, 100 | Positive accent and the mark's completion dot                     |
-| Tomato    | `#FF6B4A` | 255, 107, 74  | Sparing attention/correction accent; not part of the primary mark |
+## Interface palette
 
-Measured WCAG contrast ratios:
+The refreshed interface uses semantic roles rather than scattered literal colors.
 
-- warm rice on deep ink: `14.81:1`;
-- calamansi on deep ink: `14.77:1`; and
-- tomato on deep ink: `5.97:1`.
+| Role              | Light     | Dark      | Purpose                                       |
+| ----------------- | --------- | --------- | --------------------------------------------- |
+| Background        | `#F5F7FA` | `#000000` | Quiet light canvas and OLED-black dark canvas |
+| Primary text      | `#07182F` | `#F2F6FA` | High-contrast headings and body copy          |
+| Brand accent      | `#9DDD16` | `#A7E51D` | Progress, confirmation, and primary actions   |
+| Strong brand text | `#3F6200` | `#B6EF3D` | Accessible accent text                        |
 
-Use deep ink for text on calamansi or tomato. Calamansi and tomato do not have enough contrast against warm rice for body text. The logo itself is not a substitute for a semantic success, warning, or error indicator.
+Measured contrast includes light primary text/background at `16.57:1`, light muted text/background at `5.79:1`, dark primary text/background at `19.33:1`, and dark muted text/background at `9.54:1`.
 
-## Lockups and wordmark
+Lime is an accent, not a universal status color. Pair progress, sync, warning, and error states with text or symbols so meaning is never color-only.
 
-The preferred wordmark lockup is the color or one-color mark followed by the configured product name in the application's semibold sans-serif UI typeface.
+## Usage rules
 
-- Use title case: `Locked and Lean` when the default configured name is active.
-- Keep the wordmark as live text from the same product-name configuration used by the application.
-- Set the cap height to about 42% of the mark height and vertically center the text against the circular body, not the shackle.
-- Keep one status-dot diameter (`1x`) between the mark and the text.
-- Do not abbreviate the public-facing name to `L&L` or redraw it inside the symbol.
+- Keep the artwork proportional; never stretch, rotate, trace, or recolor it.
+- Use the shared `BrandMark` component instead of importing raster artwork directly into feature screens.
+- Mark a logo decorative when adjacent live text already supplies the product name. Otherwise expose the configured name as its accessibility label.
+- Keep interactive controls at least 48dp and do not turn the logo into an unlabeled control.
+- Maintain the factual, calm voice: avoid `cheat`, `guilty`, `bad food`, punishment language, and body-shaming imagery.
+- Preserve the product rule `interpret -> verify -> log`; brand polish must never imply that an estimate was confirmed when it was only previewed.
 
-## Clearspace, sizing, and placement
+## Asset integrity
 
-Define `1x` as the diameter of the calamansi dot in the color mark.
-
-- Keep at least `1x` clearspace on every side of a standalone mark or lockup.
-- Keep the full-color standalone mark at 24 px or larger in digital interfaces. At smaller sizes, use the ink or rice one-color mark and provide an accessible label.
-- The supplied app icon places the mark inside a platform-safe square with 10% vertical and 20% horizontal outer breathing room. Do not crop or stretch it.
-- Scale proportionally. Never rotate, skew, outline, add shadows, add gradients, or recolor individual pieces outside the approved palette.
-- Do not place the color mark on photography or a background that reduces the silhouette's contrast. Use the one-color mark when the surface is visually busy.
-
-## Accessibility and tone
-
-- Give a standalone informational logo the accessible name `Locked and Lean` (or the configured product name). Mark it decorative when adjacent live text already supplies the name.
-- Do not use the icon alone as an unlabeled interactive control.
-- The calamansi dot is decorative brand language. Never make status depend on its color or presence alone.
-- Pair nutrition estimates and progress states with plain-language labels. The brand voice is factual, calm, and encouraging; avoid `cheat`, `guilty`, `bad food`, `burn it off`, and body-shaming language.
-- Do not combine the mark with weighing scales, measuring tapes, before/after bodies, lock keyholes, Philippine flags/maps, or fork-and-knife clip art.
-
-## Asset validation
-
-- `locked-and-lean-mark.png`: RGBA, transparent corners, alpha range 0-255, nontransparent bounds `(203, 102)-(821, 922)`.
-- `locked-and-lean-app-icon.png`: RGB and fully opaque; all four corners are exact warm rice `#F5F0E6`.
-- Both one-color marks: RGBA with transparent corners and the same nontransparent bounds as the color mark.
-- A Lanczos downsample to 24 x 24 retained all three intended color regions: 115 deep-ink pixels, 443 warm-rice pixels, and 18 calamansi pixels under nearest-palette classification.
-- Visual inspection confirmed a clean silhouette, no chroma fringe, no text, no watermark, and legibility at launcher and 24 px sizes.
-
-The master is a high-resolution raster asset with vector-friendly geometry, not an editable vector file. Rebuild or trace it in a vector design tool before large-format physical production; do not auto-trace and silently treat the result as the canonical mark.
+- Light source/copy SHA-256: `D9785FCC40B33CE4D08DCAA620F6D18965EC1AFC2C3CB896DB55EC5A35C6BBF1` (exact match verified).
+- Dark source/copy SHA-256: `B0FDEA39C6134CD2E9E030D67AF33FD81B2993F67FF87EBDD441177958B13D06` (exact match verified).
+- Both masters are intentionally retained byte-for-byte. Any future transparent launcher foreground should be produced as a separately reviewed derivative rather than silently replacing these originals.

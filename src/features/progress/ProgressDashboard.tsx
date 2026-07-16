@@ -1,14 +1,8 @@
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ChoiceChips } from "../../components/ChoiceChips";
-import {
-  colors,
-  elevation,
-  radius,
-  spacing,
-  type,
-  typeScale,
-} from "../../design-system/tokens";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import type { CalendarDayView } from "../calendar/types";
 import type {
   ProgressDashboardData,
@@ -26,6 +20,7 @@ const value = (number: number | null, unit: string) =>
   number == null ? "Unknown" : `${Math.round(number * 10) / 10} ${unit}`;
 
 function WeightDirection({ change }: { change: number | null }) {
+  const styles = useProgressStyles();
   if (change == null)
     return <Text style={styles.weightDirection}>• FIRST POINT</Text>;
   if (change > 0)
@@ -44,6 +39,7 @@ function WeightDirection({ change }: { change: number | null }) {
 }
 
 function NutritionChart({ days }: { days: CalendarDayView[] }) {
+  const styles = useProgressStyles();
   const visible = days.slice(-14);
   const maximum = Math.max(
     1,
@@ -103,6 +99,7 @@ function NutritionChart({ days }: { days: CalendarDayView[] }) {
 }
 
 function MacroTrend({ days }: { days: CalendarDayView[] }) {
+  const styles = useProgressStyles();
   const logged = days.filter((day) => day.snapshot.hasEntries).slice(-7);
   return (
     <View style={styles.section}>
@@ -150,6 +147,7 @@ function WeightChart({
   points: WeightTrendView[];
   truncated: boolean;
 }) {
+  const styles = useProgressStyles();
   const visible = points.slice(-12);
   const weights = visible.map((point) => point.weightKg);
   const minimum = weights.length ? Math.min(...weights) : 0;
@@ -212,6 +210,7 @@ export function ProgressDashboard({
   rangeDays: ProgressRangeDays;
   onRangeChange: (days: ProgressRangeDays) => void;
 }) {
+  const styles = useProgressStyles();
   const summary = data.summary;
   return (
     <View>
@@ -304,292 +303,326 @@ export function ProgressDashboard({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  summaryGrid: { gap: spacing.md, marginTop: spacing.lg },
-  summaryPrimary: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    ...elevation.floating,
-  },
-  summarySecondary: {
-    backgroundColor: colors.calamansi,
-    borderColor: colors.ink,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    padding: spacing.xl,
-    ...elevation.card,
-  },
-  summaryEyebrow: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 1,
-  },
-  summaryNumber: {
-    color: colors.rice,
-    fontFamily: type.numeric,
-    fontSize: 54,
-    lineHeight: 60,
-    marginTop: spacing.xs,
-  },
-  summaryCaption: {
-    color: colors.riceDark,
-    fontFamily: type.body,
-    fontSize: typeScale.label,
-    lineHeight: 18,
-  },
-  summaryDarkEyebrow: {
-    color: colors.inkMuted,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 1,
-  },
-  summaryDarkNumber: {
-    color: colors.ink,
-    fontFamily: type.numeric,
-    fontSize: 48,
-    lineHeight: 54,
-    marginTop: spacing.xs,
-  },
-  summaryDarkCaption: {
-    color: colors.inkMuted,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 0.8,
-  },
-  macroSummary: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    ...elevation.card,
-  },
-  macroSummaryTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 21,
-  },
-  macroSummaryCopy: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: typeScale.bodySmall,
-    lineHeight: 21,
-    marginTop: spacing.xs,
-  },
-  macroSummaryValues: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.lg,
-    marginTop: spacing.md,
-  },
-  macroSummaryValue: {
-    color: colors.ink,
-    fontFamily: type.label,
-    fontSize: typeScale.label,
-  },
-  weightSummary: {
-    backgroundColor: colors.skyWash,
-    borderColor: colors.inkRule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.md,
-    padding: spacing.lg,
-  },
-  weightSummaryEyebrow: {
-    color: colors.inkMuted,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 0.8,
-  },
-  weightSummaryValue: {
-    color: colors.ink,
-    fontFamily: type.numeric,
-    fontSize: 34,
-    marginTop: spacing.sm,
-  },
-  weightSummaryDirection: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 0.8,
-    marginTop: 2,
-  },
-  weightSummaryDates: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    marginTop: spacing.sm,
-  },
-  weightSummaryEmpty: {
-    color: colors.inkFaint,
-    fontFamily: type.display,
-    fontSize: 21,
-    marginTop: spacing.sm,
-  },
-  chartCard: {
-    backgroundColor: colors.paperRaised,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-    ...elevation.card,
-  },
-  chartHead: { alignItems: "flex-end", flexDirection: "row", gap: spacing.md },
-  chartEyebrow: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    letterSpacing: 0.8,
-  },
-  chartTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 24,
-    marginTop: 2,
-  },
-  chartNote: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-  },
-  barChart: {
-    alignItems: "flex-end",
-    flexDirection: "row",
-    gap: 3,
-    height: 154,
-    marginTop: spacing.lg,
-  },
-  barColumn: { alignItems: "center", flex: 1 },
-  barTrack: { flex: 1, justifyContent: "flex-end", width: "72%" },
-  bar: {
-    backgroundColor: colors.calamansiDeep,
-    borderRadius: 3,
-    minHeight: 3,
-    width: "100%",
-  },
-  barAbove: { backgroundColor: colors.tomato },
-  barIncomplete: { backgroundColor: colors.inkFaint },
-  barMissing: { backgroundColor: colors.rule },
-  barSymbol: {
-    color: colors.ink,
-    fontFamily: type.label,
-    fontSize: 11,
-    marginTop: 3,
-  },
-  barDate: { color: colors.inkFaint, fontFamily: type.body, fontSize: 11 },
-  legend: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    marginTop: spacing.md,
-  },
-  section: { marginTop: spacing.xl },
-  sectionHead: {
-    alignItems: "flex-end",
-    borderBottomColor: colors.ink,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: spacing.sm,
-  },
-  sectionTitle: { color: colors.ink, fontFamily: type.display, fontSize: 25 },
-  sectionMeta: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-  },
-  macroRow: {
-    borderBottomColor: colors.rule,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    minHeight: 56,
-    paddingVertical: spacing.md,
-  },
-  macroDate: {
-    color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-    width: 42,
-  },
-  macroValue: {
-    color: colors.ink,
-    fontFamily: type.label,
-    fontSize: typeScale.caption,
-  },
-  macroStatus: {
-    color: colors.calamansiDeep,
-    flexBasis: "100%",
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.7,
-    marginLeft: 50,
-  },
-  emptyText: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    paddingVertical: spacing.lg,
-  },
-  truncated: {
-    backgroundColor: colors.tomatoWash,
-    color: colors.ink,
-    fontFamily: type.bodyStrong,
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: spacing.md,
-    padding: spacing.md,
-  },
-  weightList: { marginTop: spacing.sm },
-  weightRow: {
-    borderBottomColor: colors.rule,
-    borderBottomWidth: 1,
-    minHeight: 68,
-    paddingVertical: spacing.md,
-  },
-  weightMarker: {
-    backgroundColor: colors.skyWash,
-    borderRightColor: colors.calamansiDeep,
-    borderRightWidth: 4,
-    height: 8,
-    marginBottom: spacing.sm,
-  },
-  weightCopy: { alignItems: "baseline", flexDirection: "row", gap: spacing.md },
-  weightValue: { color: colors.ink, fontFamily: type.bodyStrong, fontSize: 15 },
-  weightDirection: {
-    color: colors.calamansiDeep,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.7,
-  },
-  weightDate: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    marginTop: 2,
-  },
-  weightGap: {
-    color: colors.inkFaint,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    marginTop: 2,
-  },
-  serverStamp: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: typeScale.caption,
-    lineHeight: 18,
-    marginBottom: spacing.xl,
-    marginTop: spacing.xl,
-  },
-});
+function useProgressStyles() {
+  const theme = useAppTheme();
+  return useMemo(() => createStyles(theme), [theme]);
+}
+
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    flex: { flex: 1 },
+    summaryGrid: { gap: spacing.md, marginTop: spacing.lg },
+    summaryPrimary: {
+      backgroundColor: colors.brandContainer,
+      borderColor: colors.brandStrong,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      padding: spacing.xl,
+      ...elevation.floating,
+    },
+    summarySecondary: {
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      padding: spacing.xl,
+      ...elevation.card,
+    },
+    summaryEyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 1,
+    },
+    summaryNumber: {
+      color: colors.text,
+      fontFamily: type.numeric,
+      fontSize: 54,
+      lineHeight: 60,
+      marginTop: spacing.xs,
+    },
+    summaryCaption: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.label,
+      lineHeight: 18,
+    },
+    summaryDarkEyebrow: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 1,
+    },
+    summaryDarkNumber: {
+      color: colors.text,
+      fontFamily: type.numeric,
+      fontSize: 48,
+      lineHeight: 54,
+      marginTop: spacing.xs,
+    },
+    summaryDarkCaption: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+    },
+    macroSummary: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.md,
+      padding: spacing.lg,
+      ...elevation.card,
+    },
+    macroSummaryTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 21,
+    },
+    macroSummaryCopy: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+    },
+    macroSummaryValues: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.lg,
+      marginTop: spacing.md,
+    },
+    macroSummaryValue: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: typeScale.label,
+    },
+    weightSummary: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.md,
+      padding: spacing.lg,
+    },
+    weightSummaryEyebrow: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+    },
+    weightSummaryValue: {
+      color: colors.text,
+      fontFamily: type.numeric,
+      fontSize: 34,
+      marginTop: spacing.sm,
+    },
+    weightSummaryDirection: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+      marginTop: 2,
+    },
+    weightSummaryDates: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: spacing.sm,
+    },
+    weightSummaryEmpty: {
+      color: colors.textFaint,
+      fontFamily: type.display,
+      fontSize: 21,
+      marginTop: spacing.sm,
+    },
+    chartCard: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+      ...elevation.card,
+    },
+    chartHead: {
+      alignItems: "flex-end",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    chartEyebrow: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.8,
+    },
+    chartTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 24,
+      marginTop: 2,
+    },
+    chartNote: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+    },
+    barChart: {
+      alignItems: "flex-end",
+      flexDirection: "row",
+      gap: 3,
+      height: 154,
+      marginTop: spacing.lg,
+    },
+    barColumn: { alignItems: "center", flex: 1 },
+    barTrack: { flex: 1, justifyContent: "flex-end", width: "72%" },
+    bar: {
+      backgroundColor: colors.brandStrong,
+      borderRadius: 3,
+      minHeight: 3,
+      width: "100%",
+    },
+    barAbove: { backgroundColor: colors.danger },
+    barIncomplete: { backgroundColor: colors.textFaint },
+    barMissing: { backgroundColor: colors.border },
+    barSymbol: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: 11,
+      marginTop: 3,
+    },
+    barDate: { color: colors.textFaint, fontFamily: type.body, fontSize: 11 },
+    legend: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: spacing.md,
+    },
+    section: { marginTop: spacing.xl },
+    sectionHead: {
+      alignItems: "flex-end",
+      borderBottomColor: colors.borderStrong,
+      borderBottomWidth: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      paddingBottom: spacing.sm,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 25,
+    },
+    sectionMeta: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+    },
+    macroRow: {
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      minHeight: 56,
+      paddingVertical: spacing.md,
+    },
+    macroDate: {
+      color: colors.textFaint,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      width: 42,
+    },
+    macroValue: {
+      color: colors.text,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+    },
+    macroStatus: {
+      color: colors.brandStrong,
+      flexBasis: "100%",
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.7,
+      marginLeft: 50,
+    },
+    emptyText: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 18,
+      paddingVertical: spacing.lg,
+    },
+    truncated: {
+      backgroundColor: colors.dangerContainer,
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      fontSize: 11,
+      lineHeight: 17,
+      marginTop: spacing.md,
+      padding: spacing.md,
+    },
+    weightList: { marginTop: spacing.sm },
+    weightRow: {
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+      minHeight: 68,
+      paddingVertical: spacing.md,
+    },
+    weightMarker: {
+      backgroundColor: colors.infoContainer,
+      borderRightColor: colors.brandStrong,
+      borderRightWidth: 4,
+      height: 8,
+      marginBottom: spacing.sm,
+    },
+    weightCopy: {
+      alignItems: "baseline",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    weightValue: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: 15,
+    },
+    weightDirection: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.7,
+    },
+    weightDate: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      marginTop: 2,
+    },
+    weightGap: {
+      color: colors.textFaint,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 0.6,
+      marginTop: 2,
+    },
+    serverStamp: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginBottom: spacing.xl,
+      marginTop: spacing.xl,
+    },
+  });

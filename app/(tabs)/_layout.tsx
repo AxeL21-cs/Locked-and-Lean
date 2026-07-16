@@ -3,12 +3,8 @@ import { SymbolView } from "expo-symbols";
 import { StyleSheet, View } from "react-native";
 
 import { TAB_ITEMS } from "../../src/features/navigation/tabs";
-import {
-  colors,
-  elevation,
-  radius,
-  type,
-} from "../../src/design-system/tokens";
+import type { AppTheme } from "../../src/design-system/theme";
+import { useAppTheme } from "../../src/design-system/theme";
 
 const glyphs = [
   { android: "home", ios: "house.fill", web: "home" },
@@ -23,20 +19,23 @@ const glyphs = [
 ] as const;
 
 export default function TabsLayout() {
+  const theme = useAppTheme();
+  const { colors, elevation, type } = theme;
+  const styles = createStyles(theme);
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.inkFaint,
+        tabBarActiveTintColor: colors.text,
+        tabBarInactiveTintColor: colors.textFaint,
         tabBarLabelStyle: {
           fontFamily: type.label,
           fontSize: 12,
           marginBottom: 7,
         },
         tabBarStyle: {
-          backgroundColor: colors.paperRaised,
-          borderTopColor: colors.rule,
+          backgroundColor: colors.surfaceRaised,
+          borderTopColor: colors.border,
           height: 82,
           paddingTop: 8,
           ...elevation.floating,
@@ -61,7 +60,7 @@ export default function TabsLayout() {
                 <SymbolView
                   name={glyphs[index]!}
                   size={item.name === "add" ? 27 : 23}
-                  tintColor={item.name === "add" ? colors.ink : color}
+                  tintColor={item.name === "add" ? colors.onBrand : color}
                 />
               </View>
             ),
@@ -72,22 +71,24 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  iconBox: {
-    alignItems: "center",
-    borderRadius: radius.pill,
-    height: 32,
-    justifyContent: "center",
-    width: 52,
-  },
-  activeIconBox: { backgroundColor: colors.calamansiWash },
-  addIconBox: {
-    backgroundColor: colors.calamansi,
-    borderColor: colors.ink,
-    borderWidth: 1,
-    height: 48,
-    marginTop: -16,
-    width: 56,
-    ...elevation.card,
-  },
-});
+function createStyles({ colors, elevation, radius }: AppTheme) {
+  return StyleSheet.create({
+    iconBox: {
+      alignItems: "center",
+      borderRadius: radius.pill,
+      height: 32,
+      justifyContent: "center",
+      width: 52,
+    },
+    activeIconBox: { backgroundColor: colors.brandContainer },
+    addIconBox: {
+      backgroundColor: colors.brand,
+      borderColor: colors.brandStrong,
+      borderWidth: 1,
+      height: 48,
+      marginTop: -16,
+      width: 56,
+      ...elevation.card,
+    },
+  });
+}

@@ -16,8 +16,8 @@ import { AsyncStatePanel } from "../../components/AsyncStatePanel";
 import { ChoiceChips } from "../../components/ChoiceChips";
 import { Screen } from "../../components/Screen";
 import { ScreenHeader } from "../../components/ScreenHeader";
-import { colors, radius, spacing, type } from "../../design-system/tokens";
 import { PRODUCT } from "../../design-system/product";
+import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import {
   type BarcodeSymbology,
   createBarcodeScanGate,
@@ -101,6 +101,7 @@ function PermissionPanel({
   onRequest: () => void;
   onManualEntry: () => void;
 }) {
+  const styles = useBarcodeStyles();
   return (
     <Screen>
       <ScreenHeader
@@ -156,6 +157,7 @@ function CandidateCard({
   selected: boolean;
   onPress: () => void;
 }) {
+  const styles = useBarcodeStyles();
   return (
     <Pressable
       accessibilityLabel={`${candidate.name}, ${candidate.servingLabel}, ${marketLabel(candidate.marketStatus)}`}
@@ -219,6 +221,7 @@ function ProductReview({
   onScanAgain: () => void;
   onManualEntry: () => void;
 }) {
+  const styles = useBarcodeStyles();
   const selected = lookup.candidates.find(
     (candidate) => candidateKey(candidate) === selectedCandidateKey,
   );
@@ -315,6 +318,7 @@ export function BarcodeScannerFlow({
   onChatGptHandoff: (barcode: string) => void;
   onLogged: () => void;
 }) {
+  const styles = useBarcodeStyles();
   const [permission, requestPermission] = useCameraPermissions();
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [permissionError, setPermissionError] = useState<string>();
@@ -647,232 +651,265 @@ export function BarcodeScannerFlow({
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  body: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: spacing.sm,
-  },
-  permissionCard: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    marginTop: spacing.xl,
-    padding: spacing.xl,
-  },
-  permissionMark: { color: colors.calamansiDeep, fontSize: 34 },
-  permissionTitle: {
-    color: colors.ink,
-    fontFamily: type.display,
-    fontSize: 27,
-    marginTop: spacing.md,
-  },
-  error: {
-    color: "#9F2D17",
-    fontFamily: type.bodyStrong,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.md,
-  },
-  reviewIntro: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: spacing.xl,
-  },
-  candidateList: { gap: spacing.md, marginTop: spacing.lg },
-  candidate: {
-    backgroundColor: colors.paper,
-    borderColor: colors.rule,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    minHeight: 144,
-    padding: spacing.lg,
-  },
-  candidateSelected: { borderColor: colors.ink, borderWidth: 2 },
-  candidateTop: { flexDirection: "row", gap: spacing.md },
-  candidateName: { color: colors.ink, fontFamily: type.display, fontSize: 22 },
-  candidateMeta: {
-    color: colors.inkMuted,
-    fontFamily: type.body,
-    fontSize: 12,
-    marginTop: 3,
-  },
-  kcal: { color: colors.ink, fontFamily: type.label, fontSize: 13 },
-  market: {
-    color: colors.calamansiDeep,
-    fontFamily: type.bodyStrong,
-    fontSize: 11,
-    marginTop: spacing.md,
-  },
-  source: {
-    color: colors.inkFaint,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 15,
-    marginTop: spacing.xs,
-  },
-  macros: {
-    color: colors.inkMuted,
-    fontFamily: type.label,
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: spacing.sm,
-  },
-  warning: {
-    backgroundColor: colors.tomatoWash,
-    borderRadius: radius.md,
-    marginTop: spacing.md,
-    padding: spacing.md,
-  },
-  warningTitle: {
-    color: "#9F2D17",
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1.2,
-  },
-  warningBody: {
-    color: colors.ink,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.xs,
-  },
-  textAction: {
-    borderTopColor: colors.rule,
-    borderTopWidth: 1,
-    marginBottom: spacing.xl,
-    marginTop: spacing.xl,
-    paddingTop: spacing.lg,
-  },
-  textActionLabel: { color: colors.ink, fontFamily: type.bodyStrong },
-  textActionCopy: {
-    color: colors.calamansiDeep,
-    fontFamily: type.body,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  chatFallback: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.lg,
-    marginTop: spacing.md,
-    padding: spacing.lg,
-  },
-  chatFallbackTitle: {
-    color: colors.calamansi,
-    fontFamily: type.display,
-    fontSize: 20,
-  },
-  chatFallbackBody: {
-    color: colors.riceDark,
-    fontFamily: type.body,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: spacing.sm,
-  },
-  cameraScreen: { backgroundColor: colors.ink, flex: 1 },
-  camera: { flex: 1 },
-  cameraShade: {
-    backgroundColor: "rgba(8,18,12,0.38)",
-    flex: 1,
-    justifyContent: "space-between",
-    paddingBottom: 120,
-    paddingHorizontal: spacing.lg,
-    paddingTop: 66,
-  },
-  scanHeader: { alignItems: "center" },
-  scanEyebrow: {
-    color: colors.calamansi,
-    fontFamily: type.label,
-    fontSize: 12,
-    letterSpacing: 2,
-  },
-  scanTitle: {
-    color: colors.rice,
-    fontFamily: type.display,
-    fontSize: 35,
-    marginTop: spacing.sm,
-  },
-  scanCopy: {
-    color: colors.riceDark,
-    fontFamily: type.body,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: spacing.xs,
-    maxWidth: 300,
-    textAlign: "center",
-  },
-  reticle: {
-    alignSelf: "center",
-    borderColor: colors.calamansi,
-    borderRadius: radius.lg,
-    borderWidth: 3,
-    height: 176,
-    justifyContent: "center",
-    maxWidth: 340,
-    width: "100%",
-  },
-  scanLine: {
-    backgroundColor: colors.tomato,
-    height: 2,
-    marginHorizontal: spacing.md,
-  },
-  cameraFoot: { alignItems: "center" },
-  cameraPrivacy: {
-    color: colors.rice,
-    fontFamily: type.label,
-    fontSize: 11,
-    letterSpacing: 1.5,
-  },
-  scanNotice: {
-    backgroundColor: colors.tomatoWash,
-    bottom: 110,
-    color: colors.ink,
-    fontFamily: type.bodyStrong,
-    left: spacing.lg,
-    padding: spacing.md,
-    position: "absolute",
-    right: spacing.lg,
-    textAlign: "center",
-  },
-  lookupOverlay: {
-    backgroundColor: colors.rice,
-    bottom: 0,
-    left: 0,
-    padding: spacing.lg,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  manualDock: {
-    backgroundColor: colors.ink,
-    bottom: 0,
-    left: 0,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    position: "absolute",
-    right: 0,
-  },
-  manualDockButton: {
-    alignItems: "center",
-    borderColor: colors.riceDark,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 52,
-  },
-  manualDockText: { color: colors.rice, fontFamily: type.label, fontSize: 12 },
-  webNote: {
-    color: colors.riceDark,
-    fontFamily: type.body,
-    fontSize: 12,
-    marginTop: spacing.sm,
-    textAlign: "center",
-  },
-});
+function useBarcodeStyles() {
+  const theme = useAppTheme();
+  return useMemo(() => createStyles(theme), [theme]);
+}
+
+const createStyles = ({
+  colors,
+  elevation,
+  radius,
+  spacing,
+  type,
+  typeScale,
+}: AppTheme) =>
+  StyleSheet.create({
+    flex: { flex: 1 },
+    body: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.body,
+      lineHeight: 24,
+      marginTop: spacing.sm,
+    },
+    permissionCard: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      marginTop: spacing.xl,
+      padding: spacing.xl,
+      ...elevation.card,
+    },
+    permissionMark: { color: colors.brandStrong, fontSize: 34 },
+    permissionTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 27,
+      marginTop: spacing.md,
+    },
+    error: {
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.md,
+    },
+    reviewIntro: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 14,
+      lineHeight: 21,
+      marginTop: spacing.xl,
+    },
+    candidateList: { gap: spacing.md, marginTop: spacing.lg },
+    candidate: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      minHeight: 144,
+      padding: spacing.lg,
+      ...elevation.card,
+    },
+    candidateSelected: {
+      backgroundColor: colors.brandContainer,
+      borderColor: colors.brandStrong,
+      borderWidth: 2,
+    },
+    candidateTop: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+    candidateName: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 22,
+    },
+    candidateMeta: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 12,
+      marginTop: 3,
+    },
+    kcal: { color: colors.text, fontFamily: type.label, fontSize: 13 },
+    market: {
+      color: colors.brandStrong,
+      fontFamily: type.bodyStrong,
+      fontSize: 11,
+      marginTop: spacing.md,
+    },
+    source: {
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 15,
+      marginTop: spacing.xs,
+    },
+    macros: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: 12,
+      lineHeight: 16,
+      marginTop: spacing.sm,
+    },
+    warning: {
+      backgroundColor: colors.dangerContainer,
+      borderColor: colors.danger,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      marginTop: spacing.md,
+      padding: spacing.md,
+    },
+    warningTitle: {
+      color: colors.danger,
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1.2,
+    },
+    warningBody: {
+      color: colors.text,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.xs,
+    },
+    textAction: {
+      borderTopColor: colors.border,
+      borderTopWidth: 1,
+      justifyContent: "center",
+      marginBottom: spacing.xl,
+      marginTop: spacing.xl,
+      minHeight: 56,
+      paddingTop: spacing.lg,
+    },
+    textActionLabel: { color: colors.text, fontFamily: type.bodyStrong },
+    textActionCopy: {
+      color: colors.brandStrong,
+      fontFamily: type.body,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    chatFallback: {
+      backgroundColor: colors.infoContainer,
+      borderColor: colors.info,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      marginTop: spacing.md,
+      padding: spacing.lg,
+    },
+    chatFallbackTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: 20,
+    },
+    chatFallbackBody: {
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: spacing.sm,
+    },
+    cameraScreen: { backgroundColor: "#000000", flex: 1 },
+    camera: { flex: 1 },
+    cameraShade: {
+      backgroundColor: "rgba(8,18,12,0.38)",
+      flex: 1,
+      justifyContent: "space-between",
+      paddingBottom: 120,
+      paddingHorizontal: spacing.lg,
+      paddingTop: 66,
+    },
+    scanHeader: { alignItems: "center" },
+    scanEyebrow: {
+      color: colors.brand,
+      fontFamily: type.label,
+      fontSize: 12,
+      letterSpacing: 2,
+    },
+    scanTitle: {
+      color: "#F2F6FA",
+      fontFamily: type.display,
+      fontSize: 35,
+      marginTop: spacing.sm,
+    },
+    scanCopy: {
+      color: "#D5DEE8",
+      fontFamily: type.body,
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: spacing.xs,
+      maxWidth: 300,
+      textAlign: "center",
+    },
+    reticle: {
+      alignSelf: "center",
+      borderColor: colors.brand,
+      borderRadius: radius.lg,
+      borderWidth: 3,
+      height: 176,
+      justifyContent: "center",
+      maxWidth: 340,
+      width: "100%",
+    },
+    scanLine: {
+      backgroundColor: colors.danger,
+      height: 2,
+      marginHorizontal: spacing.md,
+    },
+    cameraFoot: { alignItems: "center" },
+    cameraPrivacy: {
+      color: "#F2F6FA",
+      fontFamily: type.label,
+      fontSize: 11,
+      letterSpacing: 1.5,
+    },
+    scanNotice: {
+      backgroundColor: colors.dangerContainer,
+      bottom: 110,
+      color: colors.danger,
+      fontFamily: type.bodyStrong,
+      left: spacing.lg,
+      padding: spacing.md,
+      position: "absolute",
+      right: spacing.lg,
+      textAlign: "center",
+    },
+    lookupOverlay: {
+      backgroundColor: colors.background,
+      bottom: 0,
+      left: 0,
+      padding: spacing.lg,
+      position: "absolute",
+      right: 0,
+      top: 0,
+    },
+    manualDock: {
+      backgroundColor: "#061225",
+      bottom: 0,
+      left: 0,
+      paddingBottom: spacing.xl,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      position: "absolute",
+      right: 0,
+    },
+    manualDockButton: {
+      alignItems: "center",
+      borderColor: "#B7C3D0",
+      borderRadius: radius.md,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 52,
+    },
+    manualDockText: {
+      color: "#F2F6FA",
+      fontFamily: type.label,
+      fontSize: typeScale.bodySmall,
+    },
+    webNote: {
+      color: "#B7C3D0",
+      fontFamily: type.body,
+      fontSize: 12,
+      marginTop: spacing.sm,
+      textAlign: "center",
+    },
+  });
