@@ -62,6 +62,9 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Completed the Android 0.4.0 (versionCode 4) performance-journal redesign across Today, Calendar, Add, Progress, Profile, auth, onboarding, barcode, saved foods, offline/sync, preview, OAuth, and error states. Semantic colors, 48dp targets, Android ripples, scalable type, TalkBack state labels, and non-color-only chart/status meanings were added without changing RLS, idempotency, offline conflict handling, or exact preview-confirm writes.
 - Refined Android 0.4.1 (versionCode 5) around a quiet training-log Today screen: optically scaled compact branding, a persistent 48dp home theme switch, System/Light/Dark Profile choices, flat energy and macro hierarchy, one useful empty state, and divider-based occupied meal sections. Null macro targets now remain explicitly unset instead of displaying a fabricated ratio.
 - Produced the signed Android 0.4.1 (versionCode 5) internal-distribution APK from commit `c37769d`, preserving the production package ID and update path.
+- Added the goal-weight target planner: the first-party form remembers the owned profile, latest weight, target weight, activity, and reviewed pace; shows current and target BMI as screening context; and lets the server derive lose, maintain, or gain before presenting the complete estimate.
+- Versioned target proposals now expose maintenance calories, the safety-floor-adjusted pace, estimated goal date, and disclosed macro assumptions. They remain inert until explicit confirmation of the exact snapshot, and profile changes invalidate stale proposals.
+- Prepared Android 0.4.2 (versionCode 6) with the goal planner and explicit, unselected formula-sex/activity inputs for new users.
 
 ## Blocked work
 
@@ -117,6 +120,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Android EAS production build `b8ebfffa-f159-43b0-b8c4-f99f14cacdeb` finished for version 0.4.0 (versionCode 4). The downloaded 133,287,929-byte APK contains `AndroidManifest.xml`, five DEX files, and 104 native-library entries; SHA-256 is `217707EED2EB7FA8A2AAC0A014211E08CD7FA9CF3F2C5D0753FCBA438D84EEF2`.
 - Physical Android update verification passed on Redmi model `24117RK2CG`: ADB replace-install upgraded `com.lockedandlean.app` from 0.2.0/versionCode 2 to 0.4.0/versionCode 4 without changing `firstInstallTime`; the authenticated session remained available, a cold launch returned to Today, light and OLED-dark appearances rendered the matching supplied artwork, and filtered startup logs contained no fatal, React Native, or Expo error lines.
 - Android EAS production build `80b437a8-870e-43bc-ab68-f3bdd19aba23` finished for version 0.4.1 (versionCode 5) from commit `c37769d`. The downloaded 133,317,449-byte APK contains `AndroidManifest.xml`, `resources.arsc`, five DEX files, 104 native-library entries, and 1,384 ZIP entries; SHA-256 is `33F67CF85DE09B72C653B59EED83F7B52C5A5CC66837E67B34FADDDBFDE1CFF7`.
+- Goal-weight planner database gate: a clean local Supabase reset passed, and the complete database directory passed 359/359 pgTAP assertions across 11 suites. The repository-wide gate passed formatting, Expo lint, TypeScript, 35 Jest suites / 197 tests, 44 static contracts, 43 MCP tests/build, and the prohibited model-API scan. Expo resolved Android 0.4.2/versionCode 6 with only the intended camera permission, and the Android production export bundled successfully. Hosted migration deployment and hosted advisors are not yet claimed for this increment.
 
 ## Security status
 
@@ -137,6 +141,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - The existing allowlisted ChatGPT client can preview, revise, and exactly confirm a food log. General clients and update/copy/weight/delete writes remain blocked; the first real ChatGPT exact-confirmation and post-expiry/revocation evidence are still outstanding.
 - Multi-item saved-meal composition is not yet exposed by the mobile adapter; the current UI supports saved foods and confirmed-entry copy previews. Recent quick logging uses yesterday plus locally confirmed usuals rather than a server-wide recent list.
 - Hosted authorization-code/PKCE and real ChatGPT linking are now evidenced by successful Auth logs and an approved connector action. Post-expiry refresh/revocation behavior, MCP Inspector, TLS/proxy/rate limits, chunked-body bounding, and production telemetry retention remain unverified.
+- Goal-weight targets are adult informational estimates, not medical prescriptions. BMI is screening context rather than a calorie input, and the automatic planner is not intended for pregnancy, breastfeeding, eating-disorder care, or medical treatment. The goal-planner migration is locally verified but not yet claimed as deployed to hosted Supabase.
 
 ## Next actions
 
@@ -144,3 +149,4 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 2. Install the Android 0.4.1 (versionCode 5) production APK over the existing app once the Redmi enumerates through ADB, then verify the refined Today screen, home theme switch, session preservation, and offline reconnect.
 3. Connect the new saved-meal/quick-suggestion RPCs to the mobile adapter for cloud favorites, multi-item saved meals, and a wider recent-food list.
 4. Complete physical low-end Android, TalkBack, 200% font, offline/reconnect, concurrency, TLS/proxy/rate-limit, revocation, and telemetry verification before production.
+5. Deploy the locally verified goal-planner migration to hosted Supabase, run hosted security/performance verification, and produce the signed Android 0.4.2 APK.

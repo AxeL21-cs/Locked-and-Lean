@@ -170,9 +170,37 @@ Provider calls contain no Supabase access token and no more user context than th
 
 ## 8. Weight and target flow
 
-Weight and target commands derive ownership from the authenticated token, validate metric ranges, and write through bounded server/database operations. A weight retry is idempotent. A target calculation stores formula name, version, inputs, activity multiplier, goal adjustment, macro assumptions, and effective date.
+```mermaid
+sequenceDiagram
+    actor User
+    participant App as Expo app
+    participant Target as Target RPCs
+    participant DB as PostgreSQL and RLS
 
-A weight change may produce a proposed target update, but it does not silently change the active target. Personalized MVP targets are restricted to adults 18 and older and remain informational, not medical advice.
+    App->>Target: get_goal_setup()
+    Target->>DB: derive owner from auth.uid()
+    DB-->>App: saved profile, latest weight, target, activity, pace
+    User->>App: review height, weight, target weight, activity, pace
+    App->>Target: propose_nutrition_target(inputs)
+    Target->>Target: derive lose, maintain, or gain
+    Target->>Target: estimate MSJ calories and macros
+    Target->>Target: apply safety floor and recalculate pace and ETA
+    Target->>DB: store inert versioned proposal
+    Target-->>App: complete proposal plus BMI screening context
+    App-->>User: review calories, protein, pace, assumptions, and ETA
+    User->>App: explicit confirmation
+    App->>Target: confirm_nutrition_target(proposal, true)
+    Target->>DB: lock and activate exact proposal
+    DB-->>App: confirmed target snapshot
+```
+
+Weight and target commands derive ownership from the authenticated token, validate metric ranges, and write through bounded server/database operations. A weight retry is idempotent. `get_goal_setup` lets the first-party form reopen with the owned profile, latest measured weight, target weight, activity, and previously reviewed pace instead of starting blank.
+
+The user supplies current weight and target weight, but the server derives `lose`, `maintain`, or `gain`; it does not trust a client-selected goal label. The calorie estimate uses adult age, formula sex, height, current weight, and activity through the versioned Mifflin-St Jeor model. Current and target BMI are screening context only and do not feed the calorie formula. Protein and other macro targets follow the disclosed versioned macro assumption rather than being presented as measured clinical needs.
+
+The user reviews a weekly weight-change pace before calculation. The proposal records both requested and applied pace: when the sex-specific calorie floor constrains the requested deficit, the displayed pace and estimated goal date use the smaller applied deficit. A proposal that would reverse the goal direction or automatically target a BMI below the supported loss boundary is rejected instead of creating a misleading plan.
+
+A weight or profile change may produce a proposed target update, but it does not silently change the active target. Changing formula inputs invalidates a stale proposal. The complete proposed calories, protein/macros, goal, BMI context, pace, safety floor, and ETA remain inert until the user explicitly confirms that exact proposal. Personalized targets are restricted to adults 18 and older, are informational estimates, and are not intended for pregnancy, breastfeeding, eating-disorder care, or medical treatment; those situations require qualified professional guidance.
 
 ## 9. Deletion, export, and account removal
 

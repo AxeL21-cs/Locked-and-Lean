@@ -14,7 +14,7 @@ export function ChoiceChips<T extends string>({
 }: {
   label: string;
   choices: readonly Choice<T>[];
-  value: T;
+  value?: T;
   onChange: (value: T) => void;
   error?: string;
 }) {

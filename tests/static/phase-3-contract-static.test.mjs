@@ -9,9 +9,16 @@ const migrationPath = join(
   root,
   "supabase/migrations/20260712230402_phase_3_core_backend.sql",
 );
+const goalPlannerMigrationPath = join(
+  root,
+  "supabase/migrations/20260717031644_goal_weight_target_planner.sql",
+);
 const qaSqlPath = join(root, "supabase/tests/database/phase_3_qa.test.sql");
 const adapterPath = join(root, "src/services/supabase/adapter.ts");
-const migration = readFileSync(migrationPath, "utf8");
+const migration = [
+  readFileSync(migrationPath, "utf8"),
+  readFileSync(goalPlannerMigrationPath, "utf8"),
+].join("\n");
 const adapter = readFileSync(adapterPath, "utf8");
 
 function normalized(value) {
@@ -19,12 +26,15 @@ function normalized(value) {
 }
 
 function functionDefinition(schema, name) {
-  const result = migration.match(
-    new RegExp(
-      `create or replace function ${schema}\\.${name}\\s*\\([\\s\\S]*?\\$\\$;`,
-      "i",
+  const results = [
+    ...migration.matchAll(
+      new RegExp(
+        `create or replace function ${schema}\\.${name}\\s*\\([\\s\\S]*?\\$\\$;`,
+        "gi",
+      ),
     ),
-  );
+  ];
+  const result = results.at(-1);
   assert.ok(result, `missing ${schema}.${name}`);
   return result[0];
 }
@@ -52,6 +62,7 @@ function adapterMethod(name) {
 }
 
 const rpcContracts = {
+  get_goal_setup: [],
   upsert_profile: [
     "p_display_name",
     "p_birth_date",
@@ -62,8 +73,8 @@ const rpcContracts = {
   ],
   propose_nutrition_target: [
     "p_weight_kg",
+    "p_target_weight_kg",
     "p_activity_level",
-    "p_goal",
     "p_requested_weekly_weight_change_kg",
     "p_effective_from",
   ],
@@ -140,6 +151,7 @@ test("write RPCs derive identity and never accept user IDs or aggregate totals",
 
 test("mobile adapter calls exact RPC argument contracts without identity or totals", () => {
   const methods = {
+    getGoalSetup: "get_goal_setup",
     upsertProfile: "upsert_profile",
     proposeNutritionTarget: "propose_nutrition_target",
     confirmNutritionTarget: "confirm_nutrition_target",

@@ -55,7 +55,7 @@ select results_eq(
 select results_eq(
   $$
     select status from public.propose_nutrition_target(
-      72, 'moderately_active', 'maintain', 0, null
+      72, 72, 'moderately_active', null, null
     )
   $$,
   $$ values ('proposed'::text) $$,

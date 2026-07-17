@@ -16,22 +16,51 @@ export type ProfileInput = {
   formulaSex: FormulaSex;
   heightCm: number;
   weightKg: number;
+  targetWeightKg: number;
   activityLevel: ActivityLevel;
-  goal: Goal;
   preferredUnits: "metric";
   timezone: string;
   targetRateKgPerWeek?: number;
 };
 
+export type GoalSetup = {
+  displayName: string | null;
+  ageYears: number | null;
+  formulaSex: FormulaSex | null;
+  heightCm: number | null;
+  currentWeightKg: number | null;
+  targetWeightKg: number | null;
+  activityLevel: ActivityLevel | null;
+  requestedWeeklyChangeKg: number | null;
+  hasConfirmedTarget: boolean;
+};
+
 export type NutritionTarget = {
   id: string;
   status: "proposed" | "confirmed";
+  effectiveFrom: string;
   calorieTarget: number;
   proteinTargetG: number;
   carbohydrateTargetG: number;
   fatTargetG: number;
   formulaName: string;
   formulaVersion: string;
+  ageYears: number;
+  formulaSex: FormulaSex;
+  heightCm: number;
+  currentWeightKg: number;
+  targetWeightKg: number;
+  currentBmi: number;
+  targetBmi: number;
+  activityLevel: ActivityLevel;
+  activityMultiplier: number;
+  goal: Goal;
+  maintenanceCalories: number;
+  calorieAdjustment: number;
+  requestedWeeklyChangeKg: number;
+  appliedWeeklyChangeKg: number;
+  estimatedGoalDate: string;
+  calorieFloor: number;
   assumptions: string[];
   disclaimer: string;
 };
@@ -314,6 +343,7 @@ export interface MobileApi {
   updatePassword(password: string): Promise<void>;
   logout(): Promise<void>;
   upsertProfile(input: ProfileInput): Promise<void>;
+  getGoalSetup(): Promise<GoalSetup>;
   proposeNutritionTarget(input: ProfileInput): Promise<NutritionTarget>;
   getProposedNutritionTarget(): Promise<NutritionTarget | null>;
   confirmNutritionTarget(targetId: string): Promise<NutritionTarget>;

@@ -15,6 +15,7 @@ import type {
   CalendarHistoryDay,
   DayHistory,
   FoodPreview,
+  GoalSetup,
   HistoryDayEntry,
   ManualFoodInput,
   MobileApi,
@@ -56,28 +57,94 @@ function birthDateForAge(age: number) {
 
 function mapTarget(value: unknown): NutritionTarget {
   const row = first(value);
-  const assumptions = row.macro_assumptions;
+  const assumptions =
+    row.macro_assumptions && typeof row.macro_assumptions === "object"
+      ? (row.macro_assumptions as Row)
+      : {};
+  const proteinFraction = nullableNumber(assumptions.protein_calorie_fraction);
+  const carbohydrateFraction = nullableNumber(
+    assumptions.carbohydrate_calorie_fraction,
+  );
+  const fatFraction = nullableNumber(assumptions.fat_calorie_fraction);
+  const kcalPerKg = nullableNumber(assumptions.kilocalories_per_kg);
+  const calorieFloor = number(
+    row.safe_calorie_floor ?? assumptions.safe_calorie_floor,
+  );
+  const calorieAdjustment = number(row.goal_adjustment_kcal);
+  const targetCalories = number(row.calorie_target);
   return {
     id: string(row.id ?? row.target_id),
     status: string(row.status) === "confirmed" ? "confirmed" : "proposed",
-    calorieTarget: number(row.calorie_target),
+    effectiveFrom: string(row.effective_from),
+    calorieTarget: targetCalories,
     proteinTargetG: number(row.protein_target_g),
     carbohydrateTargetG: number(row.carbohydrate_target_g),
     fatTargetG: number(row.fat_target_g),
     formulaName: string(row.formula_name),
     formulaVersion: string(row.formula_version),
-    assumptions: Array.isArray(assumptions)
-      ? assumptions.map(String)
-      : assumptions && typeof assumptions === "object"
-        ? Object.entries(assumptions).map(
-            ([key, item]) => `${key}: ${String(item)}`,
-          )
-        : [],
-    disclaimer: string(
-      row.informational_disclaimer ??
-        row.informational_disclaimer_version ??
-        "Informational estimate for adults; not medical advice.",
+    ageYears: number(row.age_years),
+    formulaSex: string(row.formula_sex) as NutritionTarget["formulaSex"],
+    heightCm: number(row.height_cm),
+    currentWeightKg: number(row.weight_kg),
+    targetWeightKg: number(row.target_weight_kg),
+    currentBmi: number(row.current_bmi),
+    targetBmi: number(row.target_bmi),
+    activityLevel: string(
+      row.activity_level,
+    ) as NutritionTarget["activityLevel"],
+    activityMultiplier: number(row.activity_multiplier),
+    goal: string(row.goal) as NutritionTarget["goal"],
+    maintenanceCalories: number(
+      row.maintenance_calorie_estimate ?? targetCalories - calorieAdjustment,
     ),
+    calorieAdjustment,
+    requestedWeeklyChangeKg: number(
+      row.requested_weekly_weight_change_kg ??
+        assumptions.requested_weekly_weight_change_kg,
+    ),
+    appliedWeeklyChangeKg: number(
+      row.applied_weekly_weight_change_kg ??
+        assumptions.applied_weekly_weight_change_kg,
+    ),
+    estimatedGoalDate: string(row.estimated_goal_date),
+    calorieFloor,
+    assumptions: [
+      proteinFraction != null &&
+      carbohydrateFraction != null &&
+      fatFraction != null
+        ? `Macro targets use ${Math.round(proteinFraction * 100)}% protein, ${Math.round(carbohydrateFraction * 100)}% carbohydrate, and ${Math.round(fatFraction * 100)}% fat.`
+        : null,
+      kcalPerKg != null
+        ? `The timeline uses about ${Math.round(kcalPerKg).toLocaleString()} kcal per kilogram as an estimate.`
+        : null,
+      calorieFloor > 0
+        ? `The safety floor applied to this estimate is ${Math.round(calorieFloor).toLocaleString()} kcal per day.`
+        : null,
+      "BMI is shown as a screening estimate and does not set the calorie target.",
+    ].filter((item): item is string => item != null),
+    disclaimer:
+      "Informational estimate for adults. BMI is a screening measure, and calorie, protein, and timeline estimates are not medical advice.",
+  };
+}
+
+function mapGoalSetup(value: unknown): GoalSetup {
+  const row = first(value);
+  return {
+    displayName: row.display_name ? string(row.display_name) : null,
+    ageYears: nullableNumber(row.age_years),
+    formulaSex: row.formula_sex
+      ? (string(row.formula_sex) as GoalSetup["formulaSex"])
+      : null,
+    heightCm: nullableNumber(row.height_cm),
+    currentWeightKg: nullableNumber(row.current_weight_kg),
+    targetWeightKg: nullableNumber(row.target_weight_kg),
+    activityLevel: row.activity_level
+      ? (string(row.activity_level) as GoalSetup["activityLevel"])
+      : null,
+    requestedWeeklyChangeKg: nullableNumber(
+      row.requested_weekly_weight_change_kg,
+    ),
+    hasConfirmedTarget: Boolean(row.has_confirmed_target),
   };
 }
 
@@ -518,11 +585,14 @@ export const mobileApi: MobileApi = {
       p_time_zone: input.timezone,
     });
   },
+  async getGoalSetup() {
+    return mapGoalSetup(await rpc("get_goal_setup", {}));
+  },
   async proposeNutritionTarget(input) {
     const data = await rpc("propose_nutrition_target", {
       p_weight_kg: input.weightKg,
+      p_target_weight_kg: input.targetWeightKg,
       p_activity_level: input.activityLevel,
-      p_goal: input.goal,
       p_requested_weekly_weight_change_kg: input.targetRateKgPerWeek ?? null,
       p_effective_from: null,
     });
@@ -534,6 +604,7 @@ export const mobileApi: MobileApi = {
         .from("nutrition_targets")
         .select("*")
         .eq("status", "proposed")
+        .eq("formula_version", "locked-and-lean-msj-goal-v2")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();

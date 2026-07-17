@@ -63,14 +63,15 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardEyebrow}>DAILY BASELINE</Text>
-        <Text style={styles.cardTitle}>Profile and targets</Text>
+        <Text style={styles.cardEyebrow}>GOAL PLANNER</Text>
+        <Text style={styles.cardTitle}>Weight goal and daily targets</Text>
         <Text style={styles.cardBody}>
-          Update your adult formula inputs, then review a newly proposed target
-          before activating it.
+          Enter your current and target weight to calculate BMI context,
+          calories, protein, and an estimated timeline. Review the complete
+          proposal before activating it.
         </Text>
         <ActionButton
-          label="Review baseline details"
+          label="Update goal and targets"
           onPress={() => router.push("/onboarding" as Href)}
           tone="secondary"
         />

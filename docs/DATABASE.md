@@ -1,10 +1,10 @@
 # Locked and Lean Database
 
-Status: Phase 5 Calendar/Progress backend implemented and verified locally; hosted deployment and live nutrition-provider connectivity are not claimed.
+Status: Phase 5 Calendar/Progress and the goal-weight target planner are implemented and verified locally; the goal-planner migration is not yet claimed as deployed to the hosted project, and live nutrition-provider connectivity is not claimed.
 
 ## Source of truth
 
-The tested Phase 2 baseline is `supabase/migrations/20260712133713_phase_2_core_schema.sql`. Phase 3 is the additive `supabase/migrations/20260712230402_phase_3_core_backend.sql`; Phase 4 adds `supabase/migrations/20260712234027_phase_4_barcode_backend.sql`; Phase 5 adds `supabase/migrations/20260713000921_phase_5_calendar_progress.sql`. Fast logging and offline receipts are added by `supabase/migrations/20260716091125_fast_logging_offline_sync.sql`. The additive migrations were created with pinned Supabase CLI 2.109.1. Migrations, not this document, are authoritative.
+The tested Phase 2 baseline is `supabase/migrations/20260712133713_phase_2_core_schema.sql`. Phase 3 is the additive `supabase/migrations/20260712230402_phase_3_core_backend.sql`; Phase 4 adds `supabase/migrations/20260712234027_phase_4_barcode_backend.sql`; Phase 5 adds `supabase/migrations/20260713000921_phase_5_calendar_progress.sql`. Fast logging and offline receipts are added by `supabase/migrations/20260716091125_fast_logging_offline_sync.sql`. The goal-weight target planner is added by `supabase/migrations/20260717031644_goal_weight_target_planner.sql`. The additive migrations were created with pinned Supabase CLI 2.109.1. Migrations, not this document, are authoritative.
 
 The database follows the product rule **interpret first, verify second, log third**. Preview tables are temporary workflow state. `food_entries` and `food_entry_items` are permanent history and cannot be inserted directly by `authenticated` or `anon`.
 
@@ -26,7 +26,11 @@ Function `EXECUTE` is revoked across the application schemas before the reviewed
 - `weight_logs`: timestamped metric weight snapshots with owner-scoped idempotency.
 - `daily_summaries`: derived per-user, per-local-date cache for consumed nutrients, active target, and latest daily weight.
 
-Personalized targets are adult-only. `propose_nutrition_target` snapshots Mifflin-St Jeor `locked-and-lean-msj-v1` inputs, the fixed activity multiplier, signed rate adjustment, balanced-macro assumptions, disclaimer version, and sex-specific 1,200/1,500 kcal safety floor. A proposal is inert until `confirm_nutrition_target(..., true)` activates that exact row. A later proposal defaults to a date after the current open target, so weight changes never silently replace the active target.
+Personalized targets are adult-only and informational, not medical advice. `propose_nutrition_target` snapshots the current and target weights, current and target BMI screening values, Mifflin-St Jeor `locked-and-lean-msj-goal-v2` inputs, fixed activity multiplier, user-reviewed weekly pace, balanced-macro assumptions, disclaimer version, and sex-specific 1,200/1,500 kcal safety floor. BMI is contextual screening information and is not an input to the calorie formula.
+
+The server derives `lose`, `maintain`, or `gain` from current weight versus target weight; the client cannot select a contradictory direction. It returns the maintenance estimate, requested and actually applied pace, calorie adjustment, safety floor, and estimated goal date. If the calorie floor changes the requested pace, the stored and presented applied pace and timeline reflect the floor-constrained result. Unsupported automatic loss goals below a target BMI of 18.5 and cases where the safety floor would reverse the requested direction are rejected rather than mislabeled.
+
+`get_goal_setup` returns only the authenticated first-party user's saved profile, latest weight, target weight, activity, reviewed pace, and active-target state so the goal form can reopen prefilled. Editing formula inputs invalidates any stale proposal. A new proposal remains inert until `confirm_nutrition_target(..., true)` activates that exact snapshot; confirmation is retry-safe for the same already-confirmed target. A later proposal defaults to a date after the current open target, so weight changes never silently replace the active target.
 
 ### Nutrition catalog
 
@@ -100,6 +104,7 @@ The RPC accepts no `user_id` and no client-calculated total.
 All public functions are invoker wrappers around reviewed private bridges. They derive ownership from `auth.uid()`:
 
 - `upsert_profile`: validates the adult formula profile and a real IANA timezone.
+- `get_goal_setup`: pre-fills the first-party goal form from the owned profile, latest weight, and latest target snapshot without exposing cross-user data.
 - `propose_nutrition_target` / `confirm_nutrition_target`: calculate, present, then explicitly activate a versioned target.
 - `create_manual_food_log_preview`: creates only a complete, presented revision.
 - `save_food_for_reuse`: creates an owner-private reusable product after explicit confirmation.
@@ -150,8 +155,8 @@ Do not present database cascades alone as account deletion.
 
 ## Verification status
 
-The ten pgTAP suites in `supabase/tests/database` pass 329/329 assertions after a zero-state local reset. The Phase 5 assertions cover UTC+8 midnight boundaries, legacy stored-date drift, empty/incomplete days, snapshot provenance, sparse weights, progress averages, target resolution, copy preview-only behavior, replacement confirmation, soft-delete recalculation, cross-user isolation, OAuth default deny, RLS, and function ACL checks. Fast-logging adds saved-meal and historical-portion reuse, while the ChatGPT preview suite adds token-derived ownership/client checks, server-calculated estimates, immutable revision, stale/false confirmation denial, and idempotent exact confirmation. Local database lint reports no application-schema errors.
+The eleven pgTAP suites in `supabase/tests/database` pass 359/359 assertions after a zero-state local reset. The goal-planner suite adds 30 assertions for server-derived goal direction, BMI screening snapshots, safety-floor-adjusted pace and ETA, explicit and retry-safe confirmation, stale-proposal invalidation, first-party prefill, cross-user denial, and function ACLs. The Phase 5 assertions cover UTC+8 midnight boundaries, legacy stored-date drift, empty/incomplete days, snapshot provenance, sparse weights, progress averages, target resolution, copy preview-only behavior, replacement confirmation, soft-delete recalculation, cross-user isolation, OAuth default deny, RLS, and function ACL checks. Fast-logging adds saved-meal and historical-portion reuse, while the ChatGPT preview suite adds token-derived ownership/client checks, server-calculated estimates, immutable revision, stale/false confirmation denial, and idempotent exact confirmation. Local database lint reports no application-schema errors.
 
 Hosted drift, true concurrent confirmation, forced rollback, adversarial Storage bytes/ownership, and production retention remain release work.
 
-The previously sequence-sensitive Phase 3 effective-date fixture now derives its Manila date from the test clock, so the complete directory run passes as one invocation. Migration `20260716110100` is deployed to the hosted project; final user-owned ChatGPT confirmation and true concurrency evidence remain outstanding.
+The previously sequence-sensitive Phase 3 effective-date fixture now derives its Manila date from the test clock, so the complete directory run passes as one invocation. Migration `20260716110100` is deployed to the hosted project; hosted deployment and advisor verification for `20260717031644_goal_weight_target_planner.sql` remain pending. Final user-owned ChatGPT confirmation and true concurrency evidence also remain outstanding.

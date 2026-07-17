@@ -79,7 +79,7 @@ set local "request.jwt.claims" =
 insert into phase_3_ids (key, id)
 select 'target_a', target_id
 from public.propose_nutrition_target(
-  20, 'sedentary', 'lose', 1,
+  50, 48, 'sedentary', 1,
   (now() at time zone 'Asia/Manila')::date
 );
 
