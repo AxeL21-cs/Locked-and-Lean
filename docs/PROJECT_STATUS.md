@@ -61,6 +61,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Integrated the exact user-supplied 1254px light and dark padlock/fork/leaf artwork, added system-driven light/dark theming, and refreshed the launcher, adaptive icon, favicon, and dual splash configuration. The in-app `BrandMark` switches artwork automatically while the Android launcher uses the dark navy/lime canonical icon.
 - Completed the Android 0.4.0 (versionCode 4) performance-journal redesign across Today, Calendar, Add, Progress, Profile, auth, onboarding, barcode, saved foods, offline/sync, preview, OAuth, and error states. Semantic colors, 48dp targets, Android ripples, scalable type, TalkBack state labels, and non-color-only chart/status meanings were added without changing RLS, idempotency, offline conflict handling, or exact preview-confirm writes.
 - Refined Android 0.4.1 (versionCode 5) around a quiet training-log Today screen: optically scaled compact branding, a persistent 48dp home theme switch, System/Light/Dark Profile choices, flat energy and macro hierarchy, one useful empty state, and divider-based occupied meal sections. Null macro targets now remain explicitly unset instead of displaying a fabricated ratio.
+- Produced the signed Android 0.4.1 (versionCode 5) internal-distribution APK from commit `c37769d`, preserving the production package ID and update path.
 
 ## Blocked work
 
@@ -115,6 +116,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - The mobile-design audit reported eight heuristic touch-size findings. Manual inspection confirmed they are text line heights, chart markers, skeleton bars, or visual icon containers inside 48-82dp controls; the actual interactive targets in those locations remain at least 48dp.
 - Android EAS production build `b8ebfffa-f159-43b0-b8c4-f99f14cacdeb` finished for version 0.4.0 (versionCode 4). The downloaded 133,287,929-byte APK contains `AndroidManifest.xml`, five DEX files, and 104 native-library entries; SHA-256 is `217707EED2EB7FA8A2AAC0A014211E08CD7FA9CF3F2C5D0753FCBA438D84EEF2`.
 - Physical Android update verification passed on Redmi model `24117RK2CG`: ADB replace-install upgraded `com.lockedandlean.app` from 0.2.0/versionCode 2 to 0.4.0/versionCode 4 without changing `firstInstallTime`; the authenticated session remained available, a cold launch returned to Today, light and OLED-dark appearances rendered the matching supplied artwork, and filtered startup logs contained no fatal, React Native, or Expo error lines.
+- Android EAS production build `80b437a8-870e-43bc-ab68-f3bdd19aba23` finished for version 0.4.1 (versionCode 5) from commit `c37769d`. The downloaded 133,317,449-byte APK contains `AndroidManifest.xml`, `resources.arsc`, five DEX files, 104 native-library entries, and 1,384 ZIP entries; SHA-256 is `33F67CF85DE09B72C653B59EED83F7B52C5A5CC66837E67B34FADDDBFDE1CFF7`.
 
 ## Security status
 
@@ -131,6 +133,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Barcode lookup currently uses the server catalog snapshot; live nutrition providers and licensed Philippine datasets remain unconnected pending terms/licensing review.
 - Physical iOS/Android camera capture and OS-settings round trips, full hosted pgTAP under a privileged test role, and true concurrent idempotency remain unverified.
 - Physical Android launch, update-in-place, session preservation, and light/dark rendering are verified on the connected Redmi. MIUI denied ADB `WRITE_SETTINGS` and input injection, so 200% system-font layout, TalkBack traversal, draft-back confirmation, offline/reconnect, and low-end frame profiling still require manual interaction on the phone.
+- The 0.4.1 artifact is archive-validated and ready for update-in-place installation. During its release check, Windows and ADB did not enumerate the phone despite the reported cable connection, so the 0.4.1 physical smoke test remains pending until USB mode/debug authorization is restored.
 - The existing allowlisted ChatGPT client can preview, revise, and exactly confirm a food log. General clients and update/copy/weight/delete writes remain blocked; the first real ChatGPT exact-confirmation and post-expiry/revocation evidence are still outstanding.
 - Multi-item saved-meal composition is not yet exposed by the mobile adapter; the current UI supports saved foods and confirmed-entry copy previews. Recent quick logging uses yesterday plus locally confirmed usuals rather than a server-wide recent list.
 - Hosted authorization-code/PKCE and real ChatGPT linking are now evidenced by successful Auth logs and an approved connector action. Post-expiry refresh/revocation behavior, MCP Inspector, TLS/proxy/rate limits, chunked-body bounding, and production telemetry retention remain unverified.
@@ -138,6 +141,6 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 ## Next actions
 
 1. Run a real post-expiry refresh and MCP Inspector test through the currently approved ChatGPT connector; do not recreate it unless necessary.
-2. Install the Android 0.4.0 (versionCode 4) production APK over the existing app and verify the light/dark splash, launcher mask, Today/Add flows, and offline reconnect on the physical phone.
+2. Install the Android 0.4.1 (versionCode 5) production APK over the existing app once the Redmi enumerates through ADB, then verify the refined Today screen, home theme switch, session preservation, and offline reconnect.
 3. Connect the new saved-meal/quick-suggestion RPCs to the mobile adapter for cloud favorites, multi-item saved meals, and a wider recent-food list.
 4. Complete physical low-end Android, TalkBack, 200% font, offline/reconnect, concurrency, TLS/proxy/rate-limit, revocation, and telemetry verification before production.
