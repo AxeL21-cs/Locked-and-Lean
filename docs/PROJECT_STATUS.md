@@ -113,6 +113,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Phone-size visual verification passed at 412x915 in light and OLED-dark modes: the correct artwork and canvas colors rendered, the sign-in and registration routes were meaningful and navigable, and agent-browser found no error overlay or browser errors.
 - The mobile-design audit reported eight heuristic touch-size findings. Manual inspection confirmed they are text line heights, chart markers, skeleton bars, or visual icon containers inside 48-82dp controls; the actual interactive targets in those locations remain at least 48dp.
 - Android EAS production build `b8ebfffa-f159-43b0-b8c4-f99f14cacdeb` finished for version 0.4.0 (versionCode 4). The downloaded 133,287,929-byte APK contains `AndroidManifest.xml`, five DEX files, and 104 native-library entries; SHA-256 is `217707EED2EB7FA8A2AAC0A014211E08CD7FA9CF3F2C5D0753FCBA438D84EEF2`.
+- Physical Android update verification passed on Redmi model `24117RK2CG`: ADB replace-install upgraded `com.lockedandlean.app` from 0.2.0/versionCode 2 to 0.4.0/versionCode 4 without changing `firstInstallTime`; the authenticated session remained available, a cold launch returned to Today, light and OLED-dark appearances rendered the matching supplied artwork, and filtered startup logs contained no fatal, React Native, or Expo error lines.
 
 ## Security status
 
@@ -128,7 +129,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Expo web development emits framework-level `pointerEvents` deprecation and multiple-renderer context warnings, but the browser gate found no application error or user-visible failure.
 - Barcode lookup currently uses the server catalog snapshot; live nutrition providers and licensed Philippine datasets remain unconnected pending terms/licensing review.
 - Physical iOS/Android camera capture and OS-settings round trips, full hosted pgTAP under a privileged test role, and true concurrent idempotency remain unverified.
-- Physical Android verification at 200% system font scale, TalkBack traversal, and low-end-device frame profiling remain required for the redesigned interface.
+- Physical Android launch, update-in-place, session preservation, and light/dark rendering are verified on the connected Redmi. MIUI denied ADB `WRITE_SETTINGS` and input injection, so 200% system-font layout, TalkBack traversal, draft-back confirmation, offline/reconnect, and low-end frame profiling still require manual interaction on the phone.
 - The existing allowlisted ChatGPT client can preview, revise, and exactly confirm a food log. General clients and update/copy/weight/delete writes remain blocked; the first real ChatGPT exact-confirmation and post-expiry/revocation evidence are still outstanding.
 - Multi-item saved-meal composition is not yet exposed by the mobile adapter; the current UI supports saved foods and confirmed-entry copy previews. Recent quick logging uses yesterday plus locally confirmed usuals rather than a server-wide recent list.
 - Hosted authorization-code/PKCE and real ChatGPT linking are now evidenced by successful Auth logs and an approved connector action. Post-expiry refresh/revocation behavior, MCP Inspector, TLS/proxy/rate limits, chunked-body bounding, and production telemetry retention remain unverified.
