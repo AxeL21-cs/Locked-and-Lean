@@ -1,6 +1,6 @@
 # Locked and Lean Database
 
-Status: Phase 5 Calendar/Progress and the goal-weight target planner are implemented and verified locally; the goal-planner migration is not yet claimed as deployed to the hosted project, and live nutrition-provider connectivity is not claimed.
+Status: Phase 5 Calendar/Progress and the goal-weight target planner are implemented, verified locally, and deployed to the hosted project; live nutrition-provider connectivity is not claimed.
 
 ## Source of truth
 
@@ -159,4 +159,4 @@ The eleven pgTAP suites in `supabase/tests/database` pass 359/359 assertions aft
 
 Hosted drift, true concurrent confirmation, forced rollback, adversarial Storage bytes/ownership, and production retention remain release work.
 
-The previously sequence-sensitive Phase 3 effective-date fixture now derives its Manila date from the test clock, so the complete directory run passes as one invocation. Migration `20260716110100` is deployed to the hosted project; hosted deployment and advisor verification for `20260717031644_goal_weight_target_planner.sql` remain pending. Final user-owned ChatGPT confirmation and true concurrency evidence also remain outstanding.
+The previously sequence-sensitive Phase 3 effective-date fixture now derives its Manila date from the test clock, so the complete directory run passes as one invocation. Hosted migration history is aligned through `20260717031644_goal_weight_target_planner.sql`; the new columns and public/private function security modes were introspected after deployment. Hosted advisors reported no new goal-planner issue. Final user-owned ChatGPT confirmation and true concurrency evidence remain outstanding.
