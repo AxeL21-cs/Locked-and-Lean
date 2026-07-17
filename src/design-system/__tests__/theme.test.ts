@@ -1,4 +1,10 @@
-import { darkColors, lightColors, resolveAppTheme } from "../theme";
+import {
+  darkColors,
+  isAppThemePreference,
+  lightColors,
+  resolveAppTheme,
+  resolvePreferredColorScheme,
+} from "../theme";
 
 function luminance(hex: string) {
   const channels = hex
@@ -18,6 +24,29 @@ function contrast(foreground: string, background: string) {
 }
 
 describe("app theme", () => {
+  it.each([
+    ["system", true],
+    ["light", true],
+    ["dark", true],
+    ["sepia", false],
+    [null, false],
+  ])("validates the stored preference %s", (value, expected) => {
+    expect(isAppThemePreference(value)).toBe(expected);
+  });
+
+  it.each([
+    ["system", "dark", "dark"],
+    ["system", "light", "light"],
+    ["system", null, "light"],
+    ["light", "dark", "light"],
+    ["dark", "light", "dark"],
+  ] as const)(
+    "resolves %s preference with %s system mode to %s",
+    (preference, system, expected) => {
+      expect(resolvePreferredColorScheme(preference, system)).toBe(expected);
+    },
+  );
+
   it("provides matching semantic roles for light and dark palettes", () => {
     expect(Object.keys(darkColors).sort()).toEqual(
       Object.keys(lightColors).sort(),

@@ -19,11 +19,14 @@ The supplied files contain black corner pixels rather than transparency. `BrandM
 
 ## Theme behavior
 
-- The application follows the Android system light/dark preference through `userInterfaceStyle: automatic` and `AppThemeProvider`.
+- The application follows the Android system light/dark preference by default through `userInterfaceStyle: automatic` and `AppThemeProvider`.
+- A 48dp switch in the Today header provides immediate light/dark access. Explicit choices persist locally through the existing Expo SQLite key-value store.
+- Profile exposes `System | Light | Dark` choices so the user can restore automatic Android behavior at any time.
 - `BrandMark` automatically selects the light or dark source artwork.
+- Compact header lockups may use `artworkScale` to compensate for the approved square artwork's intrinsic padding while preserving its exact geometry and clipped outer frame.
 - Expo splash configuration declares separate light and dark images.
 - Android launchers do not switch a conventional icon when the in-app color scheme changes. The dark navy/lime artwork is the canonical launcher icon; both variants remain available inside the app.
-- A Profile appearance row truthfully reports the current system mode. There is no fake in-app theme toggle.
+- Appearance controls report both the stored preference and effective current mode; they change the same application theme used by the status bar and screen surfaces.
 
 ## Interface palette
 

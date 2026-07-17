@@ -24,4 +24,27 @@ describe("BrandMark", () => {
 
     expect(view.queryByRole("image")).toBeNull();
   });
+
+  it("optically scales the supplied tile while preserving its square frame", async () => {
+    const view = await render(
+      <BrandMark
+        artworkScale={1.25}
+        showWordmark
+        size={40}
+        wordmarkSize={18}
+      />,
+    );
+    const artwork = view.getByTestId("brand-artwork");
+    const wordmark = view.getByText(PRODUCT.name);
+
+    expect(artwork.props.resizeMode).toBe("contain");
+    expect(artwork.props.style).toMatchObject({
+      height: 50,
+      left: -5,
+      top: -5,
+      width: 50,
+    });
+    expect(wordmark.props.allowFontScaling).toBe(true);
+    expect(wordmark).toHaveStyle({ fontSize: 18, lineHeight: 22.5 });
+  });
 });

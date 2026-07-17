@@ -60,6 +60,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Deployed the combined fix as `dpl_DzYYDXCnN5E3HVPdbtdAef1QmCbQ`. Production health now reports authentication and repository both configured, the canonical handshake probe returns the expected Bearer challenge instead of HTTP 415, and a real approved `get_calendar_history` invocation completed through the connected Locked and Lean plugin without a reconnect prompt.
 - Integrated the exact user-supplied 1254px light and dark padlock/fork/leaf artwork, added system-driven light/dark theming, and refreshed the launcher, adaptive icon, favicon, and dual splash configuration. The in-app `BrandMark` switches artwork automatically while the Android launcher uses the dark navy/lime canonical icon.
 - Completed the Android 0.4.0 (versionCode 4) performance-journal redesign across Today, Calendar, Add, Progress, Profile, auth, onboarding, barcode, saved foods, offline/sync, preview, OAuth, and error states. Semantic colors, 48dp targets, Android ripples, scalable type, TalkBack state labels, and non-color-only chart/status meanings were added without changing RLS, idempotency, offline conflict handling, or exact preview-confirm writes.
+- Refined Android 0.4.1 (versionCode 5) around a quiet training-log Today screen: optically scaled compact branding, a persistent 48dp home theme switch, System/Light/Dark Profile choices, flat energy and macro hierarchy, one useful empty state, and divider-based occupied meal sections. Null macro targets now remain explicitly unset instead of displaying a fabricated ratio.
 
 ## Blocked work
 
@@ -68,7 +69,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 
 ## Test status
 
-- `npm run check`: passed on 2026-07-17 (Prettier, Expo lint with zero warnings, TypeScript, 29 Jest suites / 173 tests, 44 static contract checks, 43 MCP tests/build, and prohibited OpenAI model API scan).
+- `npm run check`: passed on 2026-07-17 (Prettier, Expo lint with zero warnings, TypeScript, 31 Jest suites / 189 tests, 44 static contract checks, 43 MCP tests/build, and prohibited OpenAI model API scan).
 - Expo public config resolution: passed.
 - Credentials-free Expo web production export: passed (26 routes, including `/barcode-scan`).
 - Browser verification at 390x844: passed for Today, Calendar, Add, Progress, and Profile; no error overlay or browser console errors; Add safe-inactive feedback verified.

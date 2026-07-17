@@ -6,13 +6,26 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { BrandMark } from "../../src/components/BrandMark";
+import { ChoiceChips } from "../../src/components/ChoiceChips";
 import { Screen } from "../../src/components/Screen";
 import { ScreenHeader } from "../../src/components/ScreenHeader";
 import { PRODUCT } from "../../src/design-system/product";
-import type { AppTheme } from "../../src/design-system/theme";
+import type {
+  AppTheme,
+  AppThemePreference,
+} from "../../src/design-system/theme";
 import { useAppTheme } from "../../src/design-system/theme";
 import { useSession } from "../../src/features/auth/SessionProvider";
 import { mobileApi } from "../../src/services/supabase";
+
+const appearanceChoices = [
+  { label: "System", value: "system" },
+  { label: "Light", value: "light" },
+  { label: "Dark", value: "dark" },
+] as const satisfies readonly {
+  label: string;
+  value: AppThemePreference;
+}[];
 
 export default function ProfileScreen() {
   const { session } = useSession();
@@ -63,23 +76,25 @@ export default function ProfileScreen() {
         />
       </View>
 
-      <View
-        accessible
-        accessibilityLabel={`Appearance follows Android system settings. Current appearance is ${theme.colorScheme} mode.`}
-        style={styles.appearance}
-      >
+      <View style={styles.appearance}>
         <View style={styles.appearanceCopy}>
           <Text style={styles.cardEyebrow}>APPEARANCE</Text>
-          <Text style={styles.appearanceTitle}>Follows Android</Text>
+          <Text style={styles.appearanceTitle}>Choose your theme</Text>
           <Text style={styles.cardBody}>
-            Locked and Lean matches your phone’s system light or dark theme.
-            Change it in Android Settings › Display › Dark theme.
+            System follows your Android display setting. A light or dark choice
+            stays selected when you reopen the app.
           </Text>
+          <ChoiceChips
+            choices={appearanceChoices}
+            label="Theme preference"
+            onChange={theme.setPreference}
+            value={theme.preference}
+          />
         </View>
         <View style={styles.systemBadge}>
           <View style={styles.systemDot} />
           <Text style={styles.systemText}>
-            {theme.colorScheme.toUpperCase()}
+            CURRENTLY {theme.colorScheme.toUpperCase()}
           </Text>
         </View>
       </View>
@@ -140,7 +155,6 @@ const createStyles = ({
       borderColor: colors.border,
       borderRadius: radius.lg,
       borderWidth: 1,
-      flexDirection: "row",
       gap: spacing.md,
       marginTop: spacing.xl,
       padding: spacing.md,

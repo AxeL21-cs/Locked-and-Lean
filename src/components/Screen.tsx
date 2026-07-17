@@ -11,13 +11,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { AppTheme } from "../design-system/theme";
 import { useAppTheme } from "../design-system/theme";
 
-export function Screen({ children }: PropsWithChildren) {
+type Props = PropsWithChildren<{ plain?: boolean }>;
+
+export function Screen({ children, plain = false }: Props) {
   const theme = useAppTheme();
   const styles = createStyles(theme);
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.topGlow} />
-      <View style={styles.texture} />
+      {plain ? null : (
+        <>
+          <View style={styles.topGlow} />
+          <View style={styles.texture} />
+        </>
+      )}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboard}

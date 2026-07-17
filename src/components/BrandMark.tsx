@@ -8,18 +8,24 @@ const DARK_MARK = require("../../assets/brand/locked-and-lean-brand-dark.png");
 
 type Props = {
   accessibilityLabel?: string;
+  artworkScale?: number;
   decorative?: boolean;
   showWordmark?: boolean;
   size?: number;
+  wordmarkSize?: number;
 };
 
 export function BrandMark({
   accessibilityLabel = `${PRODUCT.name} logo`,
+  artworkScale = 1,
   decorative = false,
   showWordmark = false,
   size = 96,
+  wordmarkSize,
 }: Props) {
   const { colors, isDark, spacing, type, typeScale } = useAppTheme();
+  const artworkSize = size * artworkScale;
+  const artworkOffset = (size - artworkSize) / 2;
 
   return (
     <View
@@ -32,7 +38,7 @@ export function BrandMark({
         style={[
           styles.clip,
           {
-            backgroundColor: "#000000",
+            backgroundColor: isDark ? "#061225" : "#FFFFFF",
             borderRadius: size * 0.215,
             height: size,
             width: size,
@@ -41,9 +47,16 @@ export function BrandMark({
       >
         <Image
           accessible={false}
-          resizeMode="cover"
+          resizeMode="contain"
           source={isDark ? DARK_MARK : LIGHT_MARK}
-          style={{ height: size, width: size }}
+          testID="brand-artwork"
+          style={{
+            height: artworkSize,
+            left: artworkOffset,
+            position: "absolute",
+            top: artworkOffset,
+            width: artworkSize,
+          }}
         />
       </View>
       {showWordmark ? (
@@ -53,7 +66,8 @@ export function BrandMark({
             color: colors.text,
             flexShrink: 1,
             fontFamily: type.display,
-            fontSize: typeScale.title,
+            fontSize: wordmarkSize ?? typeScale.title,
+            lineHeight: (wordmarkSize ?? typeScale.title) * 1.25,
           }}
         >
           {PRODUCT.name}
@@ -64,6 +78,6 @@ export function BrandMark({
 }
 
 const styles = StyleSheet.create({
-  row: { alignItems: "center", flexDirection: "row" },
+  row: { alignItems: "center", flexDirection: "row", flexShrink: 1 },
   clip: { overflow: "hidden" },
 });

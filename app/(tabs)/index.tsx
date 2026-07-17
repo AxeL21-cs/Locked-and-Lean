@@ -7,16 +7,10 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ActionButton } from "../../src/components/ActionButton";
 import { AsyncStatePanel } from "../../src/components/AsyncStatePanel";
 import { BrandMark } from "../../src/components/BrandMark";
-import { MacroRail } from "../../src/components/MacroRail";
 import { Screen } from "../../src/components/Screen";
+import { ThemeToggle } from "../../src/components/ThemeToggle";
 import type { AppTheme } from "../../src/design-system/theme";
 import { useAppTheme } from "../../src/design-system/theme";
-import {
-  mobileApi,
-  type FoodEntry,
-  type MealType,
-  type TodaySummary,
-} from "../../src/services/supabase";
 import { useSession } from "../../src/features/auth/SessionProvider";
 import {
   cacheKeys,
@@ -24,13 +18,22 @@ import {
   putCache,
 } from "../../src/features/offline/offlineStore";
 import { SyncStatusBanner } from "../../src/features/offline/SyncStatusBanner";
+import { TodayOverview } from "../../src/features/today/TodayOverview";
+import {
+  mobileApi,
+  type FoodEntry,
+  type MealType,
+  type TodaySummary,
+} from "../../src/services/supabase";
 
+const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 const mealLabels: Record<MealType, string> = {
   breakfast: "Breakfast",
   lunch: "Lunch",
   dinner: "Dinner",
   snack: "Snacks",
 };
+
 export default function TodayScreen() {
   const router = useRouter();
   const theme = useAppTheme();
@@ -42,13 +45,15 @@ export default function TodayScreen() {
   const [cachedSummary, setCachedSummary] = useState<TodaySummary>();
   const [showingCached, setShowingCached] = useState(false);
   const [cachedAt, setCachedAt] = useState<string>();
+
   useEffect(() => {
-    if (ownerId)
-      void getCache<TodaySummary>(ownerId, cacheKeys.today).then((cached) => {
-        setCachedSummary(cached?.value);
-        setCachedAt(cached?.updatedAt);
-      });
+    if (!ownerId) return;
+    void getCache<TodaySummary>(ownerId, cacheKeys.today).then((cached) => {
+      setCachedSummary(cached?.value);
+      setCachedAt(cached?.updatedAt);
+    });
   }, [ownerId]);
+
   const query = useQuery({
     queryKey: ["today", ownerId],
     enabled: Boolean(ownerId),
@@ -70,6 +75,7 @@ export default function TodayScreen() {
       }
     },
   });
+
   const remove = useMutation({
     mutationFn: (entryId: string) => mobileApi.deleteFoodEntry(entryId),
     onSuccess: async () => {
@@ -77,15 +83,31 @@ export default function TodayScreen() {
       await client.invalidateQueries({ queryKey: ["today"] });
     },
   });
-  if (query.isLoading)
+
+  const openTargetSetup = () => router.push("/onboarding" as Href);
+  const openManualEntry = (meal?: MealType) =>
+    router.push(
+      meal
+        ? ({ pathname: "/manual-entry", params: { meal } } as unknown as Href)
+        : ("/manual-entry" as Href),
+    );
+
+  if (query.isLoading) {
     return (
-      <Screen>
-        <TodayLoadingState cached={cachedSummary} />
+      <Screen plain>
+        <TodayHeader localDate={cachedSummary?.localDate} status="Refreshing" />
+        <TodayLoadingState
+          cached={cachedSummary}
+          onSetTarget={openTargetSetup}
+        />
       </Screen>
     );
-  if (query.error)
+  }
+
+  if (query.error) {
     return (
-      <Screen>
+      <Screen plain>
+        <TodayHeader status="Unavailable" />
         <AsyncStatePanel
           actionLabel="Retry"
           kind={
@@ -99,191 +121,102 @@ export default function TodayScreen() {
         />
       </Screen>
     );
+  }
+
   const summary = query.data!;
-  const target = summary.calorieTarget;
-  const remaining = target == null ? null : target - summary.caloriesConsumed;
+  const groupedMeals = mealTypes
+    .map((meal) => ({
+      meal,
+      entries: summary.entries.filter((entry) => entry.mealType === meal),
+    }))
+    .filter(({ entries }) => entries.length > 0);
+
   return (
-    <Screen>
-      <View style={styles.masthead}>
-        <View style={styles.mastheadBrand}>
-          <BrandMark decorative showWordmark size={44} />
-          <Text style={styles.kicker}>
-            {summary.localDate} · MANILA PERFORMANCE LOG
-          </Text>
-        </View>
-        <View style={styles.live}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>
-            {showingCached ? "SAVED COPY" : "CONFIRMED"}
-          </Text>
-        </View>
-      </View>
+    <Screen plain>
+      <TodayHeader
+        localDate={summary.localDate}
+        status={
+          showingCached ? "Saved copy" : `${summary.entries.length} confirmed`
+        }
+      />
       <SyncStatusBanner />
+
       {showingCached ? (
         <Text accessibilityRole="alert" style={styles.cachedNotice}>
-          Offline saved copy · last cached {cachedAt ?? summary.lastUpdatedAt}.
-          Refresh after reconnecting for current server records.
+          Offline saved copy · cached {cachedAt ?? summary.lastUpdatedAt}.
+          Reconnect to refresh server records.
         </Text>
       ) : null}
-      <View
-        style={styles.energyCard}
-        accessible
-        accessibilityLabel={
-          remaining == null
-            ? `${summary.caloriesConsumed} calories consumed; no active target`
-            : `${remaining} calories remaining`
-        }
-      >
-        <View style={styles.accentBar} />
-        <Text style={styles.cardEyebrow}>
-          {target == null ? "NO ACTIVE TARGET" : "TODAY’S BALANCE"}
+
+      <TodayOverview onSetTarget={openTargetSetup} summary={summary} />
+
+      <View style={styles.mealsHead}>
+        <Text accessibilityRole="header" style={styles.mealsTitle}>
+          Meals
         </Text>
-        <Text style={styles.remaining}>
-          {remaining == null
-            ? Math.round(summary.caloriesConsumed).toLocaleString()
-            : Math.round(remaining).toLocaleString()}
+        <Text style={styles.mealsMeta}>
+          {summary.entries.length === 0
+            ? "Nothing logged"
+            : `${summary.entries.length} confirmed`}
         </Text>
-        <Text style={styles.remainingLabel}>
-          {target == null ? "KCAL CONSUMED" : "KCAL REMAINING"}
-        </Text>
-        {target == null ? (
-          <ActionButton
-            label="Set targets"
-            onPress={() => router.push("/onboarding" as Href)}
-            tone="secondary"
-          />
-        ) : (
-          <>
-            <MacroRail
-              label="Energy"
-              value={summary.caloriesConsumed}
-              target={target}
-              unit="kcal"
-            />
-            <View style={styles.macroGrid}>
-              <MacroRail
-                compact
-                label="Protein"
-                value={summary.proteinConsumedG}
-                target={summary.proteinTargetG ?? 1}
-                unit="g"
-              />
-              <MacroRail
-                compact
-                label="Carbs"
-                value={summary.carbohydratesConsumedG}
-                target={summary.carbohydrateTargetG ?? 1}
-                unit="g"
-              />
-              <MacroRail
-                compact
-                label="Fat"
-                value={summary.fatConsumedG}
-                target={summary.fatTargetG ?? 1}
-                unit="g"
-              />
-            </View>
-          </>
-        )}
       </View>
+
       {summary.entries.length === 0 ? (
-        <AsyncStatePanel
-          actionLabel="Add food"
-          kind="empty"
-          message="Create a complete preview, review it, then explicitly confirm it to start today’s record."
-          onAction={() => router.push("/manual-entry" as Href)}
-          title="No confirmed food yet"
-        />
-      ) : null}
-      {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((meal) => {
-        const entries = summary.entries.filter(
-          (entry) => entry.mealType === meal,
-        );
-        return (
-          <View key={meal} style={styles.section}>
-            <View style={styles.sectionHead}>
-              <Text style={styles.sectionTitle}>{mealLabels[meal]}</Text>
-              <Text style={styles.sectionCount}>
-                {entries.length} {entries.length === 1 ? "entry" : "entries"}
-              </Text>
-            </View>
-            {entries.length === 0 ? (
-              <Text style={styles.emptyMeal}>No confirmed entries</Text>
-            ) : (
-              entries.map((entry) => (
-                <View key={entry.id} style={styles.entry}>
-                  <View style={styles.entryTop}>
-                    <View style={styles.entryCopy}>
-                      <Text style={styles.entryName}>{entry.name}</Text>
-                      <Text style={styles.entryMeta}>
-                        {entry.serving} · {entry.source}
-                      </Text>
-                      <Text style={styles.entryStatus}>
-                        {entry.estimated ? "ESTIMATED" : "RECORDED"} ·{" "}
-                        {entry.confidence == null
-                          ? "confidence not provided"
-                          : `${Math.round(entry.confidence * 100)}% confidence`}
-                      </Text>
-                    </View>
-                    <Text style={styles.entryKcal}>
-                      {Math.round(entry.calories)}
-                      <Text style={styles.entryUnit}> kcal</Text>
-                    </Text>
-                  </View>
-                  <View style={styles.actions}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Edit ${entry.name} through a new preview`}
-                      android_ripple={{ color: theme.colors.brandContainer }}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/manual-entry",
-                          params: {
-                            name: entry.name,
-                            calories: String(entry.calories),
-                            meal: entry.mealType,
-                          },
-                        } as unknown as Href)
-                      }
-                      style={styles.smallAction}
-                    >
-                      <Text style={styles.smallText}>Edit</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Copy ${entry.name} as a new preview`}
-                      android_ripple={{ color: theme.colors.brandContainer }}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/manual-entry",
-                          params: {
-                            name: entry.name,
-                            calories: String(entry.calories),
-                            meal: entry.mealType,
-                            copy: "entry",
-                          },
-                        } as unknown as Href)
-                      }
-                      style={styles.smallAction}
-                    >
-                      <Text style={styles.smallText}>Copy</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Delete ${entry.name}`}
-                      android_ripple={{ color: theme.colors.dangerContainer }}
-                      onPress={() => setPendingDelete(entry)}
-                      style={styles.smallAction}
-                    >
-                      <Text style={styles.deleteText}>Delete</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))
-            )}
-          </View>
-        );
-      })}
+        <View style={styles.emptyDay}>
+          <Text style={styles.emptyTitle}>Your log is clear</Text>
+          <Text style={styles.emptyCopy}>
+            Add what you ate, check the complete preview, then confirm that
+            exact version.
+          </Text>
+          <Pressable
+            accessibilityHint="Opens a new food preview"
+            accessibilityLabel="Add food"
+            accessibilityRole="button"
+            android_ripple={{ color: theme.colors.brandContainer }}
+            onPress={() => openManualEntry()}
+            style={({ pressed }) => [
+              styles.emptyAction,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.emptyActionText}>Add food</Text>
+            <Text accessible={false} style={styles.emptyArrow}>
+              →
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        groupedMeals.map(({ meal, entries }) => (
+          <MealSection
+            entries={entries}
+            key={meal}
+            meal={meal}
+            onCopy={(entry) =>
+              router.push({
+                pathname: "/manual-entry",
+                params: {
+                  name: entry.name,
+                  calories: String(entry.calories),
+                  meal: entry.mealType,
+                  copy: "entry",
+                },
+              } as unknown as Href)
+            }
+            onDelete={setPendingDelete}
+            onEdit={(entry) =>
+              router.push({
+                pathname: "/manual-entry",
+                params: {
+                  name: entry.name,
+                  calories: String(entry.calories),
+                  meal: entry.mealType,
+                },
+              } as unknown as Href)
+            }
+          />
+        ))
+      )}
+
       {pendingDelete ? (
         <View accessibilityRole="alert" style={styles.deletePanel}>
           <Text style={styles.deleteTitle}>Delete “{pendingDelete.name}”?</Text>
@@ -308,211 +241,377 @@ export default function TodayScreen() {
           />
         </View>
       ) : null}
-      <Text style={styles.updated}>
-        Last server update: {summary.lastUpdatedAt}. Pull-to-refresh is
-        available through the screen retry states.
-      </Text>
+
+      <Text style={styles.updated}>Updated {summary.lastUpdatedAt}</Text>
     </Screen>
   );
 }
 
-function TodayLoadingState({ cached }: { cached?: TodaySummary }) {
+function TodayHeader({
+  localDate,
+  status,
+}: {
+  localDate?: string;
+  status: string;
+}) {
   const theme = useAppTheme();
-  const styles = useMemo(() => createStyles(theme), [theme]);
-  const target = cached?.calorieTarget;
-  const consumed = cached?.caloriesConsumed ?? 0;
-  const remaining = target == null ? null : target - consumed;
+  const styles = createStyles(theme);
+  return (
+    <>
+      <View style={styles.masthead}>
+        <BrandMark
+          artworkScale={1.28}
+          decorative
+          showWordmark
+          size={38}
+          wordmarkSize={18}
+        />
+        <ThemeToggle />
+      </View>
+      <View style={styles.dayHead}>
+        <View style={styles.dayCopy}>
+          <Text style={styles.dateLabel}>
+            {localDate ? formatLocalDate(localDate) : "MANILA · TODAY"}
+          </Text>
+          <Text accessibilityRole="header" style={styles.dayTitle}>
+            Today
+          </Text>
+        </View>
+        <Text accessibilityLiveRegion="polite" style={styles.dayStatus}>
+          {status}
+        </Text>
+      </View>
+    </>
+  );
+}
+
+function TodayLoadingState({
+  cached,
+  onSetTarget,
+}: {
+  cached?: TodaySummary;
+  onSetTarget: () => void;
+}) {
+  const styles = createStyles(useAppTheme());
   return (
     <View accessibilityLiveRegion="polite">
-      <Text style={styles.loadingEyebrow}>TODAY · RESTORING RECORD</Text>
-      <Text style={styles.loadingTitle}>
-        {remaining == null
-          ? "Your daily field log"
-          : `${Math.round(remaining).toLocaleString()} kcal left`}
-      </Text>
-      <Text style={styles.loadingCopy}>
-        {cached
-          ? "Showing saved totals while fresh records load."
-          : "Your target and macro rails will appear here. Confirmed entries are never guessed."}
-      </Text>
-      <View style={styles.loadingStats}>
-        <View style={styles.loadingStat}>
-          <Text style={styles.loadingValue}>{Math.round(consumed)}</Text>
-          <Text style={styles.loadingLabel}>CONSUMED</Text>
-        </View>
-        <View style={styles.loadingStat}>
-          <Text style={styles.loadingValue}>
-            {target == null ? "—" : Math.round(target)}
+      {cached ? (
+        <>
+          <Text style={styles.refreshingCopy}>
+            Showing saved totals while confirmed server records refresh.
           </Text>
-          <Text style={styles.loadingLabel}>DAILY LIMIT</Text>
+          <TodayOverview onSetTarget={onSetTarget} summary={cached} />
+        </>
+      ) : (
+        <View
+          accessible
+          accessibilityLabel="Loading today's confirmed nutrition totals"
+          style={styles.loadingSummary}
+        >
+          <Text style={styles.loadingLabel}>RESTORING CONFIRMED TOTALS</Text>
+          <View style={styles.loadingMetric} />
+          <View style={styles.loadingRail} />
+          <View style={styles.loadingMacros}>
+            <View style={styles.loadingMacro} />
+            <View style={styles.loadingMacro} />
+            <View style={styles.loadingMacro} />
+          </View>
         </View>
-        <View style={styles.loadingStat}>
-          <Text style={styles.loadingValue}>
-            {cached ? Math.round(cached.proteinConsumedG) : "—"}
-          </Text>
-          <Text style={styles.loadingLabel}>PROTEIN G</Text>
-        </View>
-      </View>
-      <View
-        accessible
-        accessibilityLabel="Loading current records"
-        style={styles.skeleton}
-      >
-        <View style={styles.skeletonWide} />
-        <View style={styles.skeletonShort} />
-        <View style={styles.skeletonWide} />
+      )}
+      <View style={styles.loadingMeals}>
+        <View style={styles.loadingLineWide} />
+        <View style={styles.loadingLine} />
+        <View style={styles.loadingLineWide} />
       </View>
     </View>
   );
 }
 
-const createStyles = ({
-  colors,
-  elevation,
-  isDark,
-  radius,
-  spacing,
-  type,
-  typeScale,
-}: AppTheme) =>
-  StyleSheet.create({
+function MealSection({
+  entries,
+  meal,
+  onCopy,
+  onDelete,
+  onEdit,
+}: {
+  entries: FoodEntry[];
+  meal: MealType;
+  onCopy: (entry: FoodEntry) => void;
+  onDelete: (entry: FoodEntry) => void;
+  onEdit: (entry: FoodEntry) => void;
+}) {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
+  const calories = entries.reduce((total, entry) => total + entry.calories, 0);
+  return (
+    <View style={styles.mealSection}>
+      <View style={styles.mealHead}>
+        <Text accessibilityRole="header" style={styles.mealTitle}>
+          {mealLabels[meal]}
+        </Text>
+        <Text style={styles.mealTotal}>
+          {entries.length} · {Math.round(calories).toLocaleString()} kcal
+        </Text>
+      </View>
+      {entries.map((entry) => (
+        <View key={entry.id} style={styles.entry}>
+          <View style={styles.entryTop}>
+            <View style={styles.entryCopy}>
+              <Text style={styles.entryName}>{entry.name}</Text>
+              <Text style={styles.entryMeta}>
+                {entry.serving} · {entry.source}
+              </Text>
+              <Text style={styles.entryStatus}>
+                {entry.estimated ? "Estimated" : "Recorded"} ·{" "}
+                {entry.confidence == null
+                  ? "confidence not provided"
+                  : `${Math.round(entry.confidence * 100)}% confidence`}
+              </Text>
+            </View>
+            <Text style={styles.entryKcal}>
+              {Math.round(entry.calories).toLocaleString()}
+              <Text style={styles.entryUnit}> kcal</Text>
+            </Text>
+          </View>
+          <View style={styles.actions}>
+            <EntryAction
+              accessibilityLabel={`Edit ${entry.name} through a new preview`}
+              label="Edit"
+              onPress={() => onEdit(entry)}
+            />
+            <EntryAction
+              accessibilityLabel={`Copy ${entry.name} as a new preview`}
+              label="Copy"
+              onPress={() => onCopy(entry)}
+            />
+            <EntryAction
+              accessibilityLabel={`Delete ${entry.name}`}
+              danger
+              label="Delete"
+              onPress={() => onDelete(entry)}
+            />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function EntryAction({
+  accessibilityLabel,
+  danger = false,
+  label,
+  onPress,
+}: {
+  accessibilityLabel: string;
+  danger?: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  const theme = useAppTheme();
+  const styles = createStyles(theme);
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      android_ripple={{
+        color: danger
+          ? theme.colors.dangerContainer
+          : theme.colors.brandContainer,
+      }}
+      onPress={onPress}
+      style={({ pressed }) => [styles.entryAction, pressed && styles.pressed]}
+    >
+      <Text style={danger ? styles.dangerActionText : styles.entryActionText}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function formatLocalDate(localDate: string) {
+  const date = new Date(`${localDate}T12:00:00+08:00`);
+  if (Number.isNaN(date.getTime())) return localDate;
+  return new Intl.DateTimeFormat("en-PH", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Manila",
+    weekday: "long",
+  }).format(date);
+}
+
+function createStyles({ colors, radius, spacing, type, typeScale }: AppTheme) {
+  return StyleSheet.create({
     masthead: {
       alignItems: "center",
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: spacing.sm,
+      gap: spacing.md,
       justifyContent: "space-between",
       paddingTop: spacing.md,
     },
-    mastheadBrand: { flex: 1, minWidth: 0 },
-    kicker: {
-      color: colors.textFaint,
-      fontFamily: type.label,
-      fontSize: typeScale.caption,
-      letterSpacing: 0.7,
-      lineHeight: 17,
-      marginTop: 2,
-    },
-    live: {
-      alignItems: "center",
-      borderColor: colors.border,
-      borderRadius: radius.pill,
-      borderWidth: 1,
-      flexDirection: "row",
-      gap: spacing.xs,
-      minHeight: 36,
-      paddingHorizontal: 10,
-    },
-    liveDot: {
-      backgroundColor: colors.brand,
-      borderRadius: radius.pill,
-      height: 8,
-      width: 8,
-    },
-    liveText: {
-      color: colors.textMuted,
-      fontFamily: type.label,
-      fontSize: 11,
-      letterSpacing: 0.6,
-    },
-    energyCard: {
-      backgroundColor: isDark ? colors.surfaceRaised : colors.text,
-      borderRadius: radius.xl,
-      marginTop: spacing.xl,
-      overflow: "hidden",
-      padding: 24,
-      ...elevation.floating,
-    },
-    accentBar: {
-      backgroundColor: colors.brand,
-      borderRadius: radius.pill,
-      height: 5,
-      marginBottom: spacing.lg,
-      width: 48,
-    },
-    cardEyebrow: {
-      color: colors.brand,
-      fontFamily: type.label,
-      fontSize: typeScale.caption,
-      letterSpacing: 1,
-    },
-    remaining: {
-      color: isDark ? colors.text : colors.background,
-      fontFamily: type.numeric,
-      fontSize: typeScale.hero,
-      letterSpacing: -2.5,
-      lineHeight: 64,
-      marginTop: spacing.sm,
-    },
-    remainingLabel: {
-      color: colors.brand,
-      fontFamily: type.label,
-      fontSize: typeScale.caption,
-      letterSpacing: 1.1,
-      marginBottom: spacing.xl,
-    },
-    macroGrid: {
+    dayHead: {
+      alignItems: "flex-end",
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.md,
+      justifyContent: "space-between",
       marginTop: spacing.lg,
     },
-    section: { marginTop: spacing.xl },
-    sectionHead: {
-      alignItems: "flex-end",
-      borderBottomColor: colors.borderStrong,
-      borderBottomWidth: 1,
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingBottom: spacing.sm,
+    dayCopy: { flex: 1, minWidth: 180 },
+    dateLabel: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
     },
-    sectionTitle: {
+    dayTitle: {
       color: colors.text,
       fontFamily: type.display,
-      fontSize: 22,
+      fontSize: typeScale.display,
+      letterSpacing: -1,
+      lineHeight: 42,
+      marginTop: 2,
     },
-    sectionCount: {
+    dayStatus: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.caption,
+      paddingBottom: 6,
+    },
+    cachedNotice: {
+      borderLeftColor: colors.brand,
+      borderLeftWidth: 3,
+      color: colors.textMuted,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    mealsHead: {
+      alignItems: "flex-end",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+      justifyContent: "space-between",
+      marginTop: spacing.xl,
+    },
+    mealsTitle: {
+      color: colors.text,
+      fontFamily: type.display,
+      fontSize: typeScale.headline,
+      lineHeight: 32,
+    },
+    mealsMeta: {
       color: colors.textFaint,
       fontFamily: type.body,
       fontSize: typeScale.caption,
+      paddingBottom: 3,
     },
-    emptyMeal: {
-      color: colors.textFaint,
+    emptyDay: {
+      borderBottomColor: colors.borderStrong,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.borderStrong,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      marginTop: spacing.md,
+      paddingVertical: spacing.lg,
+    },
+    emptyTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+      lineHeight: 24,
+    },
+    emptyCopy: {
+      color: colors.textMuted,
       fontFamily: type.body,
       fontSize: typeScale.bodySmall,
-      paddingVertical: spacing.md,
+      lineHeight: 21,
+      marginTop: spacing.xs,
+      maxWidth: 440,
+    },
+    emptyAction: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      gap: spacing.sm,
+      justifyContent: "center",
+      marginTop: spacing.sm,
+      minHeight: 48,
+      paddingRight: spacing.sm,
+    },
+    emptyActionText: {
+      color: colors.brandStrong,
+      fontFamily: type.label,
+      fontSize: typeScale.bodySmall,
+    },
+    emptyArrow: {
+      color: colors.brandStrong,
+      fontFamily: type.body,
+      fontSize: typeScale.title,
+    },
+    mealSection: { marginTop: spacing.xl },
+    mealHead: {
+      alignItems: "flex-end",
+      borderBottomColor: colors.borderStrong,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+      justifyContent: "space-between",
+      paddingBottom: spacing.sm,
+    },
+    mealTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.body,
+      lineHeight: 24,
+    },
+    mealTotal: {
+      color: colors.textFaint,
+      fontFamily: type.numeric,
+      fontSize: typeScale.caption,
+      paddingBottom: 2,
     },
     entry: {
-      backgroundColor: colors.surfaceRaised,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      marginTop: 10,
-      padding: 16,
-      ...elevation.card,
+      borderBottomColor: colors.border,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      paddingVertical: spacing.md,
     },
-    entryTop: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-    entryCopy: { flex: 1 },
+    entryTop: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    entryCopy: { flex: 1, minWidth: 210 },
     entryName: {
       color: colors.text,
       fontFamily: type.bodyStrong,
-      fontSize: 16,
+      fontSize: typeScale.body,
+      lineHeight: 23,
     },
     entryMeta: {
       color: colors.textMuted,
       fontFamily: type.body,
-      fontSize: typeScale.label,
-      lineHeight: 18,
-      marginTop: 3,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 20,
+      marginTop: 2,
     },
     entryStatus: {
-      color: colors.brandStrong,
-      fontFamily: type.label,
-      fontSize: 11,
-      letterSpacing: 0.5,
-      marginTop: spacing.sm,
+      color: colors.textFaint,
+      fontFamily: type.body,
+      fontSize: typeScale.caption,
+      lineHeight: 18,
+      marginTop: spacing.xs,
     },
-    entryKcal: { color: colors.text, fontFamily: type.numeric, fontSize: 18 },
+    entryKcal: {
+      color: colors.text,
+      fontFamily: type.numeric,
+      fontSize: typeScale.body,
+      lineHeight: 23,
+    },
     entryUnit: {
       color: colors.textFaint,
       fontFamily: type.body,
@@ -522,34 +621,45 @@ const createStyles = ({
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.sm,
-      marginTop: spacing.md,
+      marginTop: spacing.sm,
     },
-    smallAction: {
+    entryAction: {
       alignItems: "center",
-      borderColor: colors.border,
-      borderRadius: radius.pill,
-      borderWidth: 1,
       justifyContent: "center",
       minHeight: 48,
-      minWidth: 68,
-      paddingHorizontal: spacing.md,
+      minWidth: 64,
+      paddingHorizontal: spacing.sm,
     },
-    smallText: { color: colors.text, fontFamily: type.label, fontSize: 13 },
-    deleteText: { color: colors.danger, fontFamily: type.label, fontSize: 13 },
+    entryActionText: {
+      color: colors.textMuted,
+      fontFamily: type.label,
+      fontSize: typeScale.label,
+    },
+    dangerActionText: {
+      color: colors.danger,
+      fontFamily: type.label,
+      fontSize: typeScale.label,
+    },
+    pressed: { opacity: 0.68 },
     deletePanel: {
       backgroundColor: colors.dangerContainer,
       borderColor: colors.danger,
-      borderRadius: radius.lg,
+      borderRadius: radius.md,
       borderWidth: 1,
       marginTop: spacing.xl,
       padding: spacing.lg,
     },
-    deleteTitle: { color: colors.text, fontFamily: type.display, fontSize: 23 },
+    deleteTitle: {
+      color: colors.text,
+      fontFamily: type.bodyStrong,
+      fontSize: typeScale.title,
+      lineHeight: 27,
+    },
     deleteCopy: {
       color: colors.textMuted,
       fontFamily: type.body,
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: typeScale.bodySmall,
+      lineHeight: 21,
       marginTop: spacing.xs,
     },
     deleteError: {
@@ -565,73 +675,65 @@ const createStyles = ({
       marginBottom: spacing.xl,
       marginTop: spacing.xl,
     },
-    loadingEyebrow: {
-      color: colors.brandStrong,
-      fontFamily: type.label,
-      fontSize: 11,
-      letterSpacing: 1,
-      marginTop: spacing.xl,
-    },
-    loadingTitle: {
-      color: colors.text,
-      fontFamily: type.display,
-      fontSize: 34,
-      marginTop: spacing.sm,
-    },
-    loadingCopy: {
+    refreshingCopy: {
       color: colors.textMuted,
       fontFamily: type.body,
-      fontSize: 14,
+      fontSize: typeScale.bodySmall,
       lineHeight: 21,
-      marginTop: spacing.xs,
+      marginTop: spacing.md,
     },
-    loadingStats: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: spacing.sm,
-      marginTop: spacing.xl,
-    },
-    loadingStat: {
-      backgroundColor: isDark ? colors.surfaceRaised : colors.text,
-      borderRadius: radius.md,
-      flex: 1,
-      minWidth: 92,
-      minHeight: 88,
-      padding: spacing.md,
-    },
-    loadingValue: {
-      color: isDark ? colors.text : colors.background,
-      fontFamily: type.numeric,
-      fontSize: 22,
+    loadingSummary: {
+      borderBottomColor: colors.borderStrong,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.borderStrong,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      marginTop: spacing.lg,
+      paddingVertical: spacing.lg,
     },
     loadingLabel: {
-      color: colors.brand,
+      color: colors.textFaint,
       fontFamily: type.label,
-      fontSize: 10,
+      fontSize: typeScale.caption,
+      letterSpacing: 0.6,
+    },
+    loadingMetric: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.sm,
+      height: 48,
       marginTop: spacing.sm,
+      width: 180,
     },
-    skeleton: { gap: spacing.md, marginTop: spacing.xl },
-    skeletonWide: {
+    loadingRail: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.pill,
+      height: 8,
+      marginTop: spacing.lg,
+      width: "100%",
+    },
+    loadingMacros: {
+      flexDirection: "row",
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
+    loadingMacro: {
       backgroundColor: colors.surfaceMuted,
       borderRadius: radius.sm,
-      height: 68,
-      opacity: 0.65,
+      flex: 1,
+      height: 56,
     },
-    skeletonShort: {
+    loadingMeals: { gap: spacing.md, marginTop: spacing.xl },
+    loadingLineWide: {
       backgroundColor: colors.surfaceMuted,
       borderRadius: radius.sm,
-      height: 20,
-      opacity: 0.45,
+      height: 52,
+      opacity: 0.72,
+    },
+    loadingLine: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.sm,
+      height: 18,
+      opacity: 0.55,
       width: "55%",
     },
-    cachedNotice: {
-      backgroundColor: colors.brandContainer,
-      borderRadius: radius.md,
-      color: colors.textMuted,
-      fontFamily: type.bodyStrong,
-      fontSize: 12,
-      lineHeight: 18,
-      marginTop: spacing.md,
-      padding: spacing.md,
-    },
   });
+}
