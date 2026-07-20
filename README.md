@@ -1,28 +1,15 @@
-<p align="center">
-  <picture>
-    <source
-      media="(prefers-color-scheme: dark)"
-      srcset="assets/brand/locked-and-lean-brand-dark.png"
-    />
-    <img
-      alt="Locked and Lean logo"
-      src="assets/brand/locked-and-lean-brand-light.png"
-      width="150"
-    />
-  </picture>
-</p>
-
-<h1 align="center">Locked and Lean</h1>
+<h1 align="center">
+  <img
+    alt="Locked and Lean logo"
+    src="assets/brand/locked-and-lean-brand-light.png"
+    width="128"
+  /><br />
+  Locked and Lean
+</h1>
 
 <p align="center">
-  <strong>A faster, review-first calorie and macro tracker made for everyday Filipino meals.</strong>
-</p>
-
-<p align="center">
-  Remember usual portions, keep logging during unreliable internet, follow calorie and protein targets, and confirm every estimate before it becomes part of your history.
-</p>
-
-<p align="center">
+  <strong>A faster, review-first calorie and macro tracker made for everyday Filipino meals.</strong><br />
+  Remember usual portions, keep logging during unreliable internet, follow calorie and protein targets, and confirm every estimate before it becomes part of your history.<br /><br />
   <a href="https://github.com/AxeL21-cs/Locked-and-Lean/releases/download/v0.4.2/Locked-and-Lean-0.4.2-build-6.apk">
     <img alt="Download Android APK" src="https://img.shields.io/badge/Download_Android_APK-v0.4.2-8CDD08?style=for-the-badge&logo=android&logoColor=07130D" />
   </a>
