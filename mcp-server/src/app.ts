@@ -107,6 +107,16 @@ function methodNotAllowed(response: ServerResponse): void {
   });
 }
 
+function setMcpCorsHeaders(response: ServerResponse): void {
+  response.setHeader("Access-Control-Allow-Origin", "*");
+  response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  response.setHeader(
+    "Access-Control-Allow-Headers",
+    "authorization, content-type, mcp-protocol-version, mcp-session-id",
+  );
+  response.setHeader("Access-Control-Expose-Headers", "Mcp-Session-Id");
+}
+
 function setIncomingHeader(
   request: IncomingMessage,
   name: string,
@@ -264,6 +274,27 @@ export function createHttpHandler(
       json(response, 404, { error: "not_found" });
       return;
     }
+
+    setMcpCorsHeaders(response);
+    if (request.method === "OPTIONS") {
+      response.writeHead(204, {
+        "Cache-Control": "no-store",
+        "Access-Control-Max-Age": "86400",
+      });
+      response.end();
+      if (process.env.VERCEL === "1") {
+        console.info(
+          "[mcp.transport]",
+          JSON.stringify({
+            status: 204,
+            method: "OPTIONS",
+            handledAs: "cors_preflight",
+          }),
+        );
+      }
+      return;
+    }
+
     if (request.method !== "POST") {
       methodNotAllowed(response);
       return;

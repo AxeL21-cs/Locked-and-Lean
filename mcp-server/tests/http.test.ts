@@ -143,6 +143,32 @@ test("health is honest, secret-free, and never production ready", () =>
     assert.equal(body.production_ready, false);
   }));
 
+test("handles MCP CORS preflight without entering the protocol transport", () =>
+  withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/mcp`, {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://chatgpt.com",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers":
+          "authorization, content-type, mcp-protocol-version, mcp-session-id",
+      },
+    });
+    assert.equal(response.status, 204);
+    assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    assert.match(
+      response.headers.get("access-control-allow-methods") ?? "",
+      /(?:^|,\s*)POST(?:,|$)/,
+    );
+    const allowedHeaders =
+      response.headers.get("access-control-allow-headers") ?? "";
+    assert.match(allowedHeaders, /authorization/);
+    assert.match(allowedHeaders, /content-type/);
+    assert.match(allowedHeaders, /mcp-protocol-version/);
+    assert.match(allowedHeaders, /mcp-session-id/);
+    assert.equal(await response.text(), "");
+  }));
+
 test("accepts an MCP initialize request over Streamable HTTP", () =>
   withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/mcp`, {
@@ -163,6 +189,11 @@ test("accepts an MCP initialize request over Streamable HTTP", () =>
       }),
     });
     assert.equal(response.status, 200);
+    assert.equal(response.headers.get("access-control-allow-origin"), "*");
+    assert.equal(
+      response.headers.get("access-control-expose-headers"),
+      "Mcp-Session-Id",
+    );
     const body = (await response.json()) as {
       result?: { serverInfo?: { name?: string }; capabilities?: unknown };
     };
