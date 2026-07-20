@@ -3,7 +3,7 @@
     "name": "Locked and Lean",
     "slug": "locked-and-lean",
     "scheme": "lockedandlean",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "orientation": "portrait",
     "icon": "./assets/brand/locked-and-lean-brand-dark.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.lockedandlean.app",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/brand/locked-and-lean-brand-dark.png"

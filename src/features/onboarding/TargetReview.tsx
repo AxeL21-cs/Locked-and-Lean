@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../../components/ActionButton";
@@ -9,7 +9,16 @@ import { AsyncStatePanel } from "../../components/AsyncStatePanel";
 import { Screen } from "../../components/Screen";
 import { ScreenHeader } from "../../components/ScreenHeader";
 import { type AppTheme, useAppTheme } from "../../design-system/theme";
-import { mobileApi, type Goal } from "../../services/supabase";
+import {
+  mobileApi,
+  type Goal,
+  type GoalSetup,
+  type NutritionTarget,
+} from "../../services/supabase";
+import { useSession } from "../auth/SessionProvider";
+import { writeCachedOnboardingCompletion } from "../auth/onboardingCompletionCache";
+
+const TODAY_ROUTE = "/(tabs)" as Href;
 
 const goalLabels: Record<Goal, string> = {
   lose: "Weight loss",
@@ -58,26 +67,87 @@ function signedCalories(value: number) {
 export function TargetReview() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { session } = useSession();
+  const ownerId = session?.user.id;
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const navigationStarted = useRef(false);
   const query = useQuery({
-    queryKey: ["proposed-target"],
+    enabled: Boolean(ownerId),
+    queryKey: ["proposed-target", ownerId],
     queryFn: () => mobileApi.getProposedNutritionTarget(),
   });
+  const goalSetup = useQuery({
+    enabled: Boolean(ownerId),
+    queryFn: () => mobileApi.getGoalSetup(),
+    queryKey: ["goal-setup", ownerId],
+  });
+
+  const openToday = useCallback(() => {
+    router.dismissAll();
+    router.replace(TODAY_ROUTE);
+  }, [router]);
+
   const confirm = useMutation({
     mutationFn: () => mobileApi.confirmNutritionTarget(query.data!.id),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["today"] }),
-        queryClient.invalidateQueries({ queryKey: ["calendar-history"] }),
-        queryClient.invalidateQueries({ queryKey: ["day-history"] }),
-        queryClient.invalidateQueries({ queryKey: ["progress"] }),
-        queryClient.invalidateQueries({ queryKey: ["goal-setup"] }),
-        queryClient.invalidateQueries({ queryKey: ["proposed-target"] }),
-      ]);
-      router.replace("/" as Href);
+    onSuccess: (confirmedTarget) => {
+      if (ownerId) {
+        queryClient.setQueryData<GoalSetup>(
+          ["goal-setup", ownerId],
+          (current) => confirmedGoalSetup(current, confirmedTarget),
+        );
+        queryClient.setQueryData(
+          ["onboarding-completion-cache", ownerId],
+          true,
+        );
+        void writeCachedOnboardingCompletion(ownerId, true).catch(
+          () => undefined,
+        );
+      }
+
+      for (const queryKey of [
+        ["today"],
+        ["calendar-history"],
+        ["day-history"],
+        ["progress"],
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
+      if (ownerId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["goal-setup", ownerId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["proposed-target", ownerId],
+          refetchType: "none",
+        });
+      }
     },
   });
+
+  useEffect(() => {
+    const confirmedProposal = confirm.isSuccess;
+    const recoveringConsumedProposal =
+      !query.isPending && !query.data && goalSetup.data?.hasConfirmedTarget;
+    if (
+      !goalSetup.data?.hasConfirmedTarget ||
+      (!confirmedProposal && !recoveringConsumedProposal) ||
+      navigationStarted.current
+    )
+      return;
+
+    navigationStarted.current = true;
+    // The auth and tab indexes both use the "/" URL. Wait until the shared
+    // confirmed state opens the protected tab route, then target that group
+    // explicitly and clear setup history for correct Android Back behavior.
+    openToday();
+  }, [
+    confirm.isSuccess,
+    goalSetup.data?.hasConfirmedTarget,
+    openToday,
+    query.data,
+    query.isPending,
+  ]);
 
   if (query.isLoading)
     return (
@@ -99,6 +169,41 @@ export function TargetReview() {
           message={query.error.message}
           onAction={() => query.refetch()}
           title="Targets could not load"
+        />
+      </Screen>
+    );
+
+  if (!query.data && ownerId && goalSetup.isPending)
+    return (
+      <Screen plain>
+        <AsyncStatePanel
+          kind="loading"
+          message="Confirming whether this proposal is already active."
+          title="Checking target status"
+        />
+      </Screen>
+    );
+
+  if (!query.data && goalSetup.error)
+    return (
+      <Screen plain>
+        <AsyncStatePanel
+          actionLabel="Retry"
+          kind="error"
+          message="We could not verify whether this target is already active."
+          onAction={() => goalSetup.refetch()}
+          title="Target status could not load"
+        />
+      </Screen>
+    );
+
+  if (!query.data && goalSetup.data?.hasConfirmedTarget)
+    return (
+      <Screen plain>
+        <AsyncStatePanel
+          kind="loading"
+          message="Your target is active. Opening Today now."
+          title="Target confirmed"
         />
       </Screen>
     );
@@ -301,6 +406,23 @@ export function TargetReview() {
       />
     </Screen>
   );
+}
+
+function confirmedGoalSetup(
+  current: GoalSetup | undefined,
+  target: NutritionTarget,
+): GoalSetup {
+  return {
+    displayName: current?.displayName ?? null,
+    ageYears: target.ageYears,
+    formulaSex: target.formulaSex,
+    heightCm: target.heightCm,
+    currentWeightKg: target.currentWeightKg,
+    targetWeightKg: target.targetWeightKg,
+    activityLevel: target.activityLevel,
+    requestedWeeklyChangeKg: target.requestedWeeklyChangeKg,
+    hasConfirmedTarget: true,
+  };
 }
 
 const createStyles = ({ colors, radius, spacing, type, typeScale }: AppTheme) =>

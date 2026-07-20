@@ -19,6 +19,13 @@ jest.mock("expo-router", () => ({
   }),
 }));
 
+jest.mock("../../auth/SessionProvider", () => ({
+  useSession: () => ({
+    loading: false,
+    session: { user: { id: "owner-a" } },
+  }),
+}));
+
 jest.mock("../../../design-system/theme", () => {
   const actual = jest.requireActual("../../../design-system/theme");
   return { ...actual, useAppTheme: jest.fn() };
@@ -153,7 +160,9 @@ describe("OnboardingForm goal planner", () => {
     );
     expect(proposeNutritionTarget).toHaveBeenCalledWith(expectedInput);
     await waitFor(() =>
-      expect(client.getQueryData(["proposed-target"])).toEqual(proposal),
+      expect(client.getQueryData(["proposed-target", "owner-a"])).toEqual(
+        proposal,
+      ),
     );
     expect(mockPush).toHaveBeenCalledWith("/target-review");
 

@@ -1,18 +1,36 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import { resolveAppTheme, useAppTheme } from "../../../design-system/theme";
-import { mobileApi, type NutritionTarget } from "../../../services/supabase";
+import { writeCachedOnboardingCompletion } from "../../auth/onboardingCompletionCache";
+import {
+  mobileApi,
+  type GoalSetup,
+  type NutritionTarget,
+} from "../../../services/supabase";
 import { TargetReview } from "../TargetReview";
 
 const mockReplace = jest.fn();
+const mockDismissAll = jest.fn();
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
+    dismissAll: mockDismissAll,
     push: jest.fn(),
     replace: mockReplace,
   }),
+}));
+
+jest.mock("../../auth/SessionProvider", () => ({
+  useSession: () => ({
+    loading: false,
+    session: { user: { id: "owner-a" } },
+  }),
+}));
+
+jest.mock("../../auth/onboardingCompletionCache", () => ({
+  writeCachedOnboardingCompletion: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("../../../design-system/theme", () => {
@@ -23,6 +41,10 @@ jest.mock("../../../design-system/theme", () => {
 const mockedUseAppTheme = useAppTheme as jest.MockedFunction<
   typeof useAppTheme
 >;
+const mockedWriteCachedOnboardingCompletion =
+  writeCachedOnboardingCompletion as jest.MockedFunction<
+    typeof writeCachedOnboardingCompletion
+  >;
 
 const proposal: NutritionTarget = {
   id: "target-proposal-2",
@@ -75,6 +97,7 @@ describe("TargetReview", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
     mockReplace.mockClear();
+    mockDismissAll.mockClear();
     mockedUseAppTheme.mockReturnValue({
       ...resolveAppTheme("light"),
       preference: "light",
@@ -85,9 +108,39 @@ describe("TargetReview", () => {
 
   it("confirms the exact displayed proposal and invalidates every target consumer", async () => {
     const client = createQueryClient();
+    const ownerASetup: GoalSetup = {
+      displayName: "Lance",
+      ageYears: 29,
+      formulaSex: "male",
+      heightCm: 178,
+      currentWeightKg: 82,
+      targetWeightKg: 74,
+      activityLevel: "moderately_active",
+      requestedWeeklyChangeKg: 0.5,
+      hasConfirmedTarget: false,
+    };
+    client.setQueryData(["goal-setup", "owner-a"], ownerASetup);
+    client.setQueryData(["goal-setup", "owner-b"], {
+      displayName: "Other owner",
+      ageYears: 30,
+      formulaSex: "female",
+      heightCm: 160,
+      currentWeightKg: 60,
+      targetWeightKg: 60,
+      activityLevel: "lightly_active",
+      requestedWeeklyChangeKg: null,
+      hasConfirmedTarget: false,
+    });
+    client.setQueryData(["onboarding-completion-cache", "owner-a"], false);
+    client.setQueryData(["onboarding-completion-cache", "owner-b"], false);
+    const pendingInvalidation = new Promise<void>(() => undefined);
     const invalidateQueries = jest
       .spyOn(client, "invalidateQueries")
-      .mockResolvedValue(undefined);
+      .mockReturnValue(pendingInvalidation);
+    jest.spyOn(mobileApi, "getGoalSetup").mockResolvedValue(ownerASetup);
+    mockedWriteCachedOnboardingCompletion.mockRejectedValueOnce(
+      new Error("Local cache unavailable"),
+    );
     jest
       .spyOn(mobileApi, "getProposedNutritionTarget")
       .mockResolvedValue(proposal);
@@ -113,18 +166,143 @@ describe("TargetReview", () => {
     await waitFor(() =>
       expect(confirmNutritionTarget).toHaveBeenCalledWith("target-proposal-2"),
     );
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/(tabs)"));
+    expect(mockDismissAll).toHaveBeenCalledTimes(1);
+    expect(
+      client.getQueryData<{ hasConfirmedTarget: boolean }>([
+        "goal-setup",
+        "owner-a",
+      ])?.hasConfirmedTarget,
+    ).toBe(true);
+    expect(
+      client.getQueryData(["onboarding-completion-cache", "owner-a"]),
+    ).toBe(true);
+    expect(
+      client.getQueryData<{ hasConfirmedTarget: boolean }>([
+        "goal-setup",
+        "owner-b",
+      ])?.hasConfirmedTarget,
+    ).toBe(false);
+    expect(
+      client.getQueryData(["onboarding-completion-cache", "owner-b"]),
+    ).toBe(false);
+    expect(writeCachedOnboardingCompletion).toHaveBeenCalledWith(
+      "owner-a",
+      true,
+    );
     await waitFor(() => expect(invalidateQueries).toHaveBeenCalledTimes(6));
     for (const queryKey of [
       ["today"],
       ["calendar-history"],
       ["day-history"],
       ["progress"],
-      ["goal-setup"],
-      ["proposed-target"],
+      ["goal-setup", "owner-a"],
     ]) {
       expect(invalidateQueries).toHaveBeenCalledWith({ queryKey });
     }
-    expect(mockReplace).toHaveBeenCalledWith("/");
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["proposed-target", "owner-a"],
+      refetchType: "none",
+    });
+
+    await view.unmount();
+    client.clear();
+  });
+
+  it("recovers an already-confirmed target instead of showing a dead-end empty state", async () => {
+    const client = createQueryClient();
+    jest.spyOn(mobileApi, "getProposedNutritionTarget").mockResolvedValue(null);
+    jest.spyOn(mobileApi, "getGoalSetup").mockResolvedValue({
+      displayName: "Lance",
+      ageYears: 29,
+      formulaSex: "male",
+      heightCm: 178,
+      currentWeightKg: 82,
+      targetWeightKg: 74,
+      activityLevel: "moderately_active",
+      requestedWeeklyChangeKg: 0.5,
+      hasConfirmedTarget: true,
+    });
+
+    const view = await render(<TargetReview />, { wrapper: wrapper(client) });
+
+    expect(await view.findByText("Target confirmed")).toBeTruthy();
+    await waitFor(() => expect(mockDismissAll).toHaveBeenCalledTimes(1));
+    expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+    expect(view.queryByText("No proposal yet")).toBeNull();
+
+    await view.unmount();
+    client.clear();
+  });
+
+  it("keeps recovery non-actionable until confirmed target status finishes loading", async () => {
+    const client = createQueryClient();
+    let resolveGoalSetup!: (value: GoalSetup) => void;
+    const pendingGoalSetup = new Promise<GoalSetup>((resolve) => {
+      resolveGoalSetup = resolve;
+    });
+    jest.spyOn(mobileApi, "getProposedNutritionTarget").mockResolvedValue(null);
+    jest.spyOn(mobileApi, "getGoalSetup").mockReturnValue(pendingGoalSetup);
+
+    const view = await render(<TargetReview />, { wrapper: wrapper(client) });
+
+    expect(await view.findByText("Checking target status")).toBeTruthy();
+    expect(view.queryByText("No proposal yet")).toBeNull();
+    expect(view.queryByRole("button", { name: "Enter details" })).toBeNull();
+    expect(mockReplace).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveGoalSetup({
+        displayName: "Lance",
+        ageYears: 29,
+        formulaSex: "male",
+        heightCm: 178,
+        currentWeightKg: 82,
+        targetWeightKg: 74,
+        activityLevel: "moderately_active",
+        requestedWeeklyChangeKg: 0.5,
+        hasConfirmedTarget: true,
+      });
+      await pendingGoalSetup;
+    });
+
+    await waitFor(() => expect(mockDismissAll).toHaveBeenCalledTimes(1));
+    expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+    expect(view.queryByText("No proposal yet")).toBeNull();
+
+    await view.unmount();
+    client.clear();
+  });
+
+  it("offers a safe status retry instead of sending a confirmed user back through setup", async () => {
+    const client = createQueryClient();
+    jest.spyOn(mobileApi, "getProposedNutritionTarget").mockResolvedValue(null);
+    jest
+      .spyOn(mobileApi, "getGoalSetup")
+      .mockRejectedValueOnce(new Error("Network unavailable"))
+      .mockResolvedValue({
+        displayName: "Lance",
+        ageYears: 29,
+        formulaSex: "male",
+        heightCm: 178,
+        currentWeightKg: 82,
+        targetWeightKg: 74,
+        activityLevel: "moderately_active",
+        requestedWeeklyChangeKg: 0.5,
+        hasConfirmedTarget: true,
+      });
+
+    const view = await render(<TargetReview />, { wrapper: wrapper(client) });
+
+    expect(await view.findByText("Target status could not load")).toBeTruthy();
+    expect(view.queryByText("No proposal yet")).toBeNull();
+    expect(view.queryByRole("button", { name: "Enter details" })).toBeNull();
+
+    await fireEvent.press(view.getByRole("button", { name: "Retry" }));
+
+    await waitFor(() => expect(mockDismissAll).toHaveBeenCalledTimes(1));
+    expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+    expect(view.queryByText("No proposal yet")).toBeNull();
 
     await view.unmount();
     client.clear();

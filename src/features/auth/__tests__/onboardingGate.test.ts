@@ -67,4 +67,15 @@ describe("resolveOnboardingGateState", () => {
       }),
     ).toBe("required");
   });
+
+  it("uses fresh server confirmation when the offline completion hint is still stale", () => {
+    expect(
+      resolveOnboardingGateState({
+        ...authenticated,
+        cachedHasConfirmedTarget: false,
+        goalSetupFailed: false,
+        hasConfirmedTarget: true,
+      }),
+    ).toBe("ready");
+  });
 });

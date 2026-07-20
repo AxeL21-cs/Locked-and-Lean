@@ -24,6 +24,7 @@ import {
   type Goal,
   type ProfileInput,
 } from "../../services/supabase";
+import { useSession } from "../auth/SessionProvider";
 import { zodResolver } from "../forms/zodResolver";
 
 const numeric = (label: string, min: number, max: number) =>
@@ -112,12 +113,15 @@ function nearestPace(value: number | null | undefined, goal: Goal): Pace {
 
 export function OnboardingForm() {
   const router = useRouter();
+  const { session } = useSession();
+  const ownerId = session?.user.id;
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const queryClient = useQueryClient();
   const hydrated = useRef(false);
   const setupQuery = useQuery({
-    queryKey: ["goal-setup"],
+    enabled: Boolean(ownerId),
+    queryKey: ["goal-setup", ownerId],
     queryFn: () => mobileApi.getGoalSetup(),
   });
   const {
@@ -212,7 +216,8 @@ export function OnboardingForm() {
       return mobileApi.proposeNutritionTarget(input);
     },
     onSuccess: (target) => {
-      queryClient.setQueryData(["proposed-target"], target);
+      if (ownerId)
+        queryClient.setQueryData(["proposed-target", ownerId], target);
       router.push("/target-review" as Href);
     },
   });
