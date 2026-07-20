@@ -1,7 +1,38 @@
-# ChatGPT app setup status
+# ChatGPT app setup
 
-The Phase 6 MCP package is deployed for restricted, allowlisted testing. It is
-not a general-production ChatGPT app while the remaining gates below are open.
+The hosted MCP package is live at
+`https://locked-and-lean-mcp.vercel.app/mcp` for restricted, allowlisted
+testing. One existing ChatGPT OAuth client is approved for calendar insights
+plus preview, revision, and exact food confirmation. Locked and Lean is not yet
+published in the public ChatGPT plugin catalog.
+
+## Connect the hosted developer preview
+
+If Locked and Lean is already connected to the testing account, preserve that
+app instance. Deleting and recreating it generates a new OAuth client
+registration that must be approved again.
+
+For a new administrator-assisted test:
+
+1. In ChatGPT web, open **Settings → Security and login** and enable
+   **Developer mode**.
+2. Open **Settings → Plugins** or
+   [chatgpt.com/plugins](https://chatgpt.com/plugins).
+3. Create a developer-mode app named `Locked and Lean`.
+4. Use `https://locked-and-lean-mcp.vercel.app/mcp` as the MCP server URL.
+5. Preserve the created app instance and approve its exact OAuth `client_id`
+   and intended actions in both the hosted MCP policy and
+   `private.oauth_client_action_policies`.
+6. Refresh the app metadata, open a new conversation, and select
+   **+ → More → Locked and Lean**.
+7. Invoke a protected read, complete the Locked and Lean OAuth sign-in, and
+   verify the owner-scoped result.
+
+A connection may discover tools before its OAuth client is approved. A policy
+`403` needs administrator action; reconnecting does not grant permission. See
+OpenAI's current
+[Connect from ChatGPT](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt)
+instructions for the developer-mode interface.
 
 ## Local verification
 
@@ -30,10 +61,10 @@ Protected calls must receive a valid user bearer token or return the OAuth
 challenge. Do not place credentials in source control, logs, query strings, or
 tool output.
 
-## Production gates
+## Public release gates
 
-Before adding a remote connector in ChatGPT developer mode, all of these must
-be completed and recorded:
+Before submitting Locked and Lean for general distribution through the public
+plugin review flow, all of these must be completed and recorded:
 
 1. Deploy the MCP endpoint on its final HTTPS origin and keep its canonical
    resource URL stable.
