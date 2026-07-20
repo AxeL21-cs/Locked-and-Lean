@@ -1,6 +1,7 @@
-import { Stack } from "expo-router";
+import { type Href, Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   AccessibilityInfo,
@@ -12,13 +13,28 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppProviders, useSession } from "../src/features/auth/SessionProvider";
+import {
+  readCachedOnboardingCompletion,
+  writeCachedOnboardingCompletion,
+} from "../src/features/auth/onboardingCompletionCache";
+import { resolveOnboardingGateState } from "../src/features/auth/onboardingGate";
+import { oauthConsentRoute } from "../src/features/oauth/authorization";
+import {
+  clearPendingOAuthAuthorizationId,
+  usePendingOAuthAuthorizationId,
+} from "../src/features/oauth/pendingAuthorization";
 import { BrandMark } from "../src/components/BrandMark";
 import { Screen } from "../src/components/Screen";
 import { PRODUCT } from "../src/design-system/product";
 import type { AppTheme } from "../src/design-system/theme";
 import { AppThemeProvider, useAppTheme } from "../src/design-system/theme";
+import { mobileApi } from "../src/services/supabase";
 
-function BrandedLaunch() {
+function BrandedLaunch({
+  message = "RESTORING YOUR FIELD LOG",
+}: {
+  message?: string;
+}) {
   const theme = useAppTheme();
   const launchStyles = createLaunchStyles(theme);
   const [opacity] = useState(() => new Animated.Value(0.55));
@@ -61,7 +77,7 @@ function BrandedLaunch() {
         >
           <BrandMark decorative size={124} />
           <Text style={launchStyles.name}>{PRODUCT.name}</Text>
-          <Text style={launchStyles.copy}>RESTORING YOUR FIELD LOG</Text>
+          <Text style={launchStyles.copy}>{message}</Text>
         </Animated.View>
       </View>
     </Screen>
@@ -95,7 +111,56 @@ function createLaunchStyles({ colors, spacing, type }: AppTheme) {
 function Navigator() {
   const { loading, session } = useSession();
   const { colors } = useAppTheme();
-  if (loading) return <BrandedLaunch />;
+  const router = useRouter();
+  const pendingOAuthAuthorizationId = usePendingOAuthAuthorizationId();
+  const ownerId = session?.user.id;
+  const cachedOnboardingCompletion = useQuery({
+    enabled: Boolean(ownerId),
+    queryFn: () => readCachedOnboardingCompletion(ownerId!),
+    queryKey: ["onboarding-completion-cache", ownerId],
+    retry: false,
+    staleTime: Infinity,
+  });
+  const goalSetup = useQuery({
+    enabled: Boolean(ownerId),
+    queryFn: async () => {
+      const setup = await mobileApi.getGoalSetup();
+      try {
+        await writeCachedOnboardingCompletion(
+          ownerId!,
+          setup.hasConfirmedTarget,
+        );
+      } catch {
+        // The server result remains authoritative for this session even if
+        // this device cannot update its offline navigation hint.
+      }
+      return setup;
+    },
+    queryKey: ["goal-setup", ownerId],
+    retry: false,
+  });
+  const onboardingGate = resolveOnboardingGateState({
+    cachedHasConfirmedTarget: cachedOnboardingCompletion.data,
+    goalSetupFailed: goalSetup.isError && !cachedOnboardingCompletion.isPending,
+    hasConfirmedTarget: goalSetup.data?.hasConfirmedTarget,
+    hasSession: Boolean(session),
+    sessionLoading: loading,
+  });
+  useEffect(() => {
+    if (!session || !pendingOAuthAuthorizationId) return;
+    const consentRoute = oauthConsentRoute(pendingOAuthAuthorizationId);
+    if (!consentRoute) {
+      clearPendingOAuthAuthorizationId();
+      return;
+    }
+    router.replace(consentRoute as Href);
+    clearPendingOAuthAuthorizationId();
+  }, [pendingOAuthAuthorizationId, router, session]);
+  if (onboardingGate === "loading")
+    return (
+      <BrandedLaunch message={session ? "CHECKING YOUR BASELINE" : undefined} />
+    );
+  const baselineRequired = onboardingGate === "required";
 
   return (
     <Stack
@@ -105,13 +170,15 @@ function Navigator() {
       }}
     >
       <Stack.Protected guard={Boolean(session)}>
-        <Stack.Screen name="(tabs)" />
+        <Stack.Protected guard={!baselineRequired}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="manual-entry" />
+          <Stack.Screen name="barcode-scan" />
+          <Stack.Screen name="saved-foods" />
+          <Stack.Screen name="repeat-entry" />
+        </Stack.Protected>
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="target-review" />
-        <Stack.Screen name="manual-entry" />
-        <Stack.Screen name="barcode-scan" />
-        <Stack.Screen name="saved-foods" />
-        <Stack.Screen name="repeat-entry" />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="(auth)" />

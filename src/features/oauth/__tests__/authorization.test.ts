@@ -6,9 +6,16 @@ import {
   redirectDisplayLabel,
   splitRequestedScopes,
 } from "../authorization";
+import {
+  clearPendingOAuthAuthorizationId,
+  getPendingOAuthAuthorizationId,
+  setPendingOAuthAuthorizationId,
+} from "../pendingAuthorization";
 
 describe("OAuth authorization parameter safety", () => {
   const id = "psjtkmmcim2qcyix6bmvk6jvzikhckbw";
+
+  beforeEach(() => clearPendingOAuthAuthorizationId());
 
   it("accepts one URL-safe opaque authorization_id without rewriting it", () => {
     expect(normalizeAuthorizationId(id.toUpperCase())).toBe(id.toUpperCase());
@@ -37,6 +44,14 @@ describe("OAuth authorization parameter safety", () => {
       oauthConsentRoute(`${id}?return=https://evil.example/callback`),
     ).toBeUndefined();
     expect(oauthLoginRoute("https://evil.example/callback")).toBeUndefined();
+  });
+
+  it("preserves only a validated opaque authorization ID across auth remounts", () => {
+    setPendingOAuthAuthorizationId(id);
+    expect(getPendingOAuthAuthorizationId()).toBe(id);
+
+    setPendingOAuthAuthorizationId("https://evil.example/return");
+    expect(getPendingOAuthAuthorizationId()).toBeUndefined();
   });
 
   it("separates supported identity scopes from unsupported custom claims", () => {

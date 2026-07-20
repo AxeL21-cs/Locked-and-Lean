@@ -15,6 +15,10 @@ import { PRODUCT } from "../../design-system/product";
 import { type AppTheme, useAppTheme } from "../../design-system/theme";
 import { mobileApi } from "../../services/supabase";
 import { oauthConsentRoute } from "../oauth/authorization";
+import {
+  clearPendingOAuthAuthorizationId,
+  setPendingOAuthAuthorizationId,
+} from "../oauth/pendingAuthorization";
 
 type Mode = "login" | "register" | "reset" | "update";
 const schema = z.object({
@@ -50,8 +54,14 @@ export function AuthForm({
   });
   const mutation = useMutation({
     mutationFn: async (values: Values) => {
-      if (mode === "login")
+      if (mode === "login") {
+        if (oauthAuthorizationId) {
+          setPendingOAuthAuthorizationId(oauthAuthorizationId);
+        } else {
+          clearPendingOAuthAuthorizationId();
+        }
         return mobileApi.login(values.email, values.password);
+      }
       if (mode === "register")
         return mobileApi.register(values.email, values.password);
       if (mode === "reset") return mobileApi.requestPasswordReset(values.email);
@@ -59,13 +69,20 @@ export function AuthForm({
     },
     onSuccess: (result, values) => {
       const consentRoute = oauthConsentRoute(oauthAuthorizationId);
-      if (mode === "login" && consentRoute)
+      if (mode === "login" && consentRoute) {
         router.replace(consentRoute as unknown as Href);
-      if (mode === "register")
-        router.replace({
-          pathname: "/verify-email",
-          params: { email: values.email },
-        } as unknown as Href);
+        clearPendingOAuthAuthorizationId();
+      }
+      if (mode === "register") {
+        if (result?.needsVerification) {
+          router.replace({
+            pathname: "/verify-email",
+            params: { email: values.email },
+          } as unknown as Href);
+        } else {
+          router.replace("/onboarding" as Href);
+        }
+      }
       if (mode === "update") router.replace("/" as Href);
     },
   });

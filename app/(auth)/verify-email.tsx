@@ -27,7 +27,8 @@ export default function VerifyEmailScreen() {
       />
       <Text style={styles.copy}>
         Open the verification link sent to {email || "your email address"}.
-        After verification, return here and sign in.
+        After verification, return here and sign in. Your baseline setup will
+        open before the main app.
       </Text>
       {resend.error ? (
         <Text accessibilityRole="alert" style={styles.error}>
