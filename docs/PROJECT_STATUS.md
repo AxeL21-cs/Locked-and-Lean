@@ -73,11 +73,12 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Added a server-owned baseline-first account gate. Immediate-session registrations open the goal planner directly; verification-required registrations retain the email step, and the first ordinary app destination after verification, sign-in, or session restoration is the planner until an exact target proposal has been confirmed.
 - Persisted only a user-scoped completion boolean for offline navigation. An RPC failure cannot mark an unknown or incomplete account as finished; offline main-app access requires a previously cached server-confirmed target. A validated in-progress ChatGPT authorization ID is kept in memory across the auth-route remount so OAuth consent is not lost or replaced by onboarding.
 - Prepared Android 0.4.3 (versionCode 7) with the baseline-first registration and restored-session routing fix. Main tabs and logging/history routes remain unavailable to incomplete accounts, while confirmed returning users and verified offline completion retain their existing behavior.
+- Added explicit MCP CORS preflight and response headers for ChatGPT connector traffic. Production now answers `OPTIONS /mcp` with HTTP 204 and permits only the implemented `POST` transport plus the authorization, content-type, protocol-version, and session headers.
 
 ## Blocked work
 
 - Supabase OAuth custom application scopes are not currently supported; the brief's proposed `food:*`, `calories:*`, and `weight:*` token scopes cannot yet be production-enforced by Supabase.
-- A real post-expiry refresh-token test and full MCP Inspector E2E require a new interaction from the user-owned ChatGPT connector.
+- The real post-expiry connector test now fails before MCP dispatch because the saved ChatGPT connection presents a refresh token that Supabase no longer recognizes. That user-owned connection must be cleared and freshly authorized; full MCP Inspector E2E remains outstanding.
 
 ## Test status
 
@@ -139,6 +140,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 - Android EAS production build `15dd3e69-cfd4-4acd-a748-018875971adf` finished for version 0.4.3 (versionCode 7) from commit `55b8084`. The downloaded 133,338,337-byte APK contains `AndroidManifest.xml`, `resources.arsc`, five DEX files, 104 native-library entries, and 1,384 ZIP entries; SHA-256 is `EA680BAFAE63C57B61D53679238C7EC5A93C72F55598994D324F7F8D71264B8A`. Google `apksig` verifies its v2 signature with zero warnings/errors, and signer SHA-256 `6F699A9AEB4CDB9D0D7A3034E760EC12F0738B8B600E44DAEE505AB0BFAF64BD` matches the verified Android 0.4.2 artifact.
 - Public GitHub Release `v0.4.3` targets source commit `55b8084b536ccc594d4eb905ce3b8f66a1a912a0` and provides `Locked-and-Lean-0.4.3-build-7.apk`. GitHub reports the uploaded asset as 133,338,337 bytes with digest `sha256:ea680bafae63c57b61d53679238c7ec5a93c72f55598994d324f7f8d71264b8a`, matching the locally verified artifact.
 - Release publication gate: the public APK asset and canonical web app both return HTTP 200. The README/project-status Prettier check and `git diff --check` pass.
+- MCP connector incident gate: the MCP package passed formatting, TypeScript, 44/44 tests, production build, and 44/44 static/security contracts. Vercel deployment `dpl_6vuKsy5sTY3xEVYUk7udsMvZLMix` is live at the canonical MCP URL; preflight returns HTTP 204 and direct initialize, discovery, and anonymous health calls return HTTP 200. The registered connector still stops before MCP dispatch, and the matching Supabase Auth event is HTTP 400 `refresh_token_not_found`; the original dynamic ChatGPT client and active consent remain present.
 
 ## Security status
 
@@ -163,7 +165,7 @@ Phase 6 - ChatGPT App and MCP (hosted endpoints deployed; OAuth production gate 
 
 ## Next actions
 
-1. Run a real post-expiry refresh and MCP Inspector test through the currently approved ChatGPT connector; do not recreate it unless necessary.
+1. Clear the stale saved Locked and Lean connection in ChatGPT, authorize it again, and immediately rerun health. Preserve the existing approved client when possible; if ChatGPT creates a new dynamic client ID, review and approve only its exact required actions before testing protected tools.
 2. Exercise the remembered setup, target review/confirmation, Today target refresh, representative confirmed meal, offline/reconnect, TalkBack, and 200% font flows on the physical POCO.
 3. Connect the new saved-meal/quick-suggestion RPCs to the mobile adapter for cloud favorites, multi-item saved meals, and a wider recent-food list.
 4. Complete physical low-end Android, TalkBack, 200% font, offline/reconnect, concurrency, TLS/proxy/rate-limit, revocation, and telemetry verification before production.
