@@ -10,15 +10,15 @@
 <p align="center">
   <strong>A faster, review-first calorie and macro tracker made for everyday Filipino meals.</strong><br />
   Remember usual portions, keep logging during unreliable internet, follow calorie and protein targets, and confirm every estimate before it becomes part of your history.<br /><br />
-  <a href="https://github.com/AxeL21-cs/Locked-and-Lean/releases/download/v0.4.3/Locked-and-Lean-0.4.3-build-7.apk">
-    <img alt="Download Android APK" src="https://img.shields.io/badge/Download_Android_APK-v0.4.3-8CDD08?style=for-the-badge&logo=android&logoColor=07130D" />
+  <a href="https://github.com/AxeL21-cs/Locked-and-Lean/releases/download/v0.4.4/Locked-and-Lean-0.4.4-build-8.apk">
+    <img alt="Download Android APK" src="https://img.shields.io/badge/Download_Android_APK-v0.4.4-8CDD08?style=for-the-badge&logo=android&logoColor=07130D" />
   </a>
   <a href="https://locked-and-lean-web.vercel.app/">
     <img alt="Open web preview" src="https://img.shields.io/badge/Open_Web_Preview-07130D?style=for-the-badge&logo=vercel&logoColor=white" />
   </a>
 </p>
 
-> **Current release:** Android 0.4.3 (build 7). This is a signed public test
+> **Current release:** Android 0.4.4 (build 8). This is a signed public test
 > release, not a Play Store release or medical device. Nutrition estimates and
 > targets should always be reviewed.
 
@@ -62,15 +62,15 @@ hidden oil, recipe, or restaurant formulation.
 
 ### 1. Download the APK
 
-**[Download Locked and Lean 0.4.3 for Android](https://github.com/AxeL21-cs/Locked-and-Lean/releases/download/v0.4.3/Locked-and-Lean-0.4.3-build-7.apk)**
+**[Download Locked and Lean 0.4.4 for Android](https://github.com/AxeL21-cs/Locked-and-Lean/releases/download/v0.4.4/Locked-and-Lean-0.4.4-build-8.apk)**
 
 The link above downloads the APK directly from this repository's
-[GitHub Release](https://github.com/AxeL21-cs/Locked-and-Lean/releases/tag/v0.4.3).
+[GitHub Release](https://github.com/AxeL21-cs/Locked-and-Lean/releases/tag/v0.4.4).
 
-- File: `Locked-and-Lean-0.4.3-build-7.apk`
-- Size: 133,338,337 bytes
+- File: `Locked-and-Lean-0.4.4-build-8.apk`
+- Size: 133,339,525 bytes
 - SHA-256:
-  `EA680BAFAE63C57B61D53679238C7EC5A93C72F55598994D324F7F8D71264B8A`
+  `BE6998FF7AF7AC07395A0D81C667B5D71B3CEAE685874509EC14266FC8D1253B`
 - Requires Android 7.0 or newer
 
 ### 2. Install it
